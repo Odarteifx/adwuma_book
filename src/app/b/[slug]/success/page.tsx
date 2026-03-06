@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { CheckCircle2, Clock, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatDate, formatTime } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -70,12 +71,12 @@ export default async function SuccessPage({ params, searchParams }: Props) {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{booking.booking_date}</span>
+              <span>{formatDate(booking.booking_date)}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                {booking.start_time?.slice(0, 5)} — {booking.end_time?.slice(0, 5)}
+                {formatTime(booking.start_time)} — {formatTime(booking.end_time)}
               </span>
             </div>
             <div className="flex items-center justify-between">

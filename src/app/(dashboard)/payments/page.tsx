@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/hooks/use-business";
 import type { Payment } from "@/types";
@@ -10,21 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PaymentsSkeleton } from "@/components/dashboard/skeletons";
+import { formatDate } from "@/lib/utils";
 import { CreditCard, TrendingUp, Calendar } from "lucide-react";
+
+type PaymentRow = Payment & {
+  bookings?: {
+    customer_name: string;
+    booking_date: string;
+    services?: { name: string };
+  };
+};
 
 export default function PaymentsPage() {
   const { business } = useBusiness();
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function PaymentsPage() {
         .eq("business_id", businessId)
         .order("created_at", { ascending: false });
       if (!cancelled) {
-        setPayments((data as Payment[]) || []);
+        setPayments((data as PaymentRow[]) || []);
         setLoading(false);
       }
     }
@@ -63,6 +66,50 @@ export default function PaymentsPage() {
     .filter((p) => p.created_at.startsWith(thisMonth))
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
+  const columns: ColumnDef<PaymentRow>[] = useMemo(
+    () => [
+      {
+        accessorKey: "customer",
+        header: "Customer",
+        cell: ({ row }) => (
+          <span className="font-medium">
+            {row.original.bookings?.customer_name || "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "service",
+        header: "Service",
+        cell: ({ row }) => row.original.bookings?.services?.name || "—",
+      },
+      {
+        accessorKey: "amount",
+        header: "Amount",
+        cell: ({ row }) => `GHS ${Number(row.original.amount).toFixed(2)}`,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+      {
+        accessorKey: "paystack_reference",
+        header: "Reference",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">
+            {row.original.paystack_reference.slice(0, 20)}…
+          </span>
+        ),
+      },
+      {
+        accessorKey: "created_at",
+        header: "Date",
+        cell: ({ row }) => formatDate(row.original.created_at.split("T")[0]),
+      },
+    ],
+    []
+  );
+
   if (!business) {
     return <PaymentsSkeleton />;
   }
@@ -71,9 +118,7 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Payments</h2>
-        <p className="text-muted-foreground">
-          Track deposits and revenue
-        </p>
+        <p className="text-muted-foreground">Track deposits and revenue</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -115,55 +160,24 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment) => {
-                  const booking = payment as Payment & {
-                    bookings?: {
-                      customer_name: string;
-                      booking_date: string;
-                      services?: { name: string };
-                    };
-                  };
-                  return (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">
-                        {booking.bookings?.customer_name || "—"}
-                      </TableCell>
-                      <TableCell>
-                        {booking.bookings?.services?.name || "—"}
-                      </TableCell>
-                      <TableCell>
-                        GHS {Number(payment.amount).toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={payment.status} />
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {payment.paystack_reference.slice(0, 20)}...
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(payment.created_at).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <DataTable
+          columns={columns}
+          data={payments}
+          mobileCard={(payment) => (
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-sm font-medium">
+                  {payment.bookings?.customer_name || "—"}
+                </p>
+                <StatusBadge status={payment.status} />
+              </div>
+              <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>GHS {Number(payment.amount).toFixed(2)} · {payment.bookings?.services?.name || "—"}</span>
+                <span>{formatDate(payment.created_at.split("T")[0])}</span>
+              </div>
+            </div>
+          )}
+        />
       )}
     </div>
   );
