@@ -21,7 +21,6 @@ interface DashboardHeaderProps {
   userName: string;
   oauthAvatarUrl?: string | null;
   gravatarUrl?: string;
-  avatarColor: string;
   businessSlug?: string;
 }
 
@@ -30,7 +29,6 @@ export function DashboardHeader({
   userName,
   oauthAvatarUrl,
   gravatarUrl,
-  avatarColor,
   businessSlug,
 }: DashboardHeaderProps) {
   const router = useRouter();
@@ -95,10 +93,7 @@ export function DashboardHeader({
                   onError={() => setGravatarFailed(true)}
                 />
               )}
-              <AvatarFallback
-                className="text-sm font-medium text-white"
-                style={{ backgroundColor: avatarColor }}
-              >
+              <AvatarFallback className="bg-primary text-sm font-medium text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -114,10 +109,7 @@ export function DashboardHeader({
                   onError={() => setGravatarFailed(true)}
                 />
               )}
-              <AvatarFallback
-                className="text-xs font-medium text-white"
-                style={{ backgroundColor: avatarColor }}
-              >
+              <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>

@@ -35,10 +35,6 @@ export default async function DashboardLayout({
   const gravatarHash = createHash("md5").update(emailNorm).digest("hex");
   const gravatarUrl = `https://www.gravatar.com/avatar/${gravatarHash}?s=80&d=404`;
 
-  const hashNum = parseInt(gravatarHash.slice(0, 8), 16);
-  const hue = hashNum % 360;
-  const avatarColor = `hsl(${hue}, 65%, 55%)`;
-
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r bg-muted/30 md:block">
@@ -53,7 +49,6 @@ export default async function DashboardLayout({
           userName={userName}
           oauthAvatarUrl={oauthAvatar}
           gravatarUrl={gravatarUrl}
-          avatarColor={avatarColor}
           businessSlug={business.slug}
         />
         <main className="flex-1 p-4 md:p-6">{children}</main>
