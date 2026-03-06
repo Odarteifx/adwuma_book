@@ -10,21 +10,16 @@ import {
 } from "@/components/ui/collapsible";
 import { MapPin, Search, ChevronDown, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useJsApiLoader } from "@react-google-maps/api";
 import dynamic from "next/dynamic";
 
-const LeafletMap = dynamic(() => import("./leaflet-map"), { ssr: false });
+const GoogleMapPicker = dynamic(() => import("./google-map"), { ssr: false });
 
-interface NominatimResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-  address?: {
-    city?: string;
-    town?: string;
-    suburb?: string;
-    state?: string;
-    country?: string;
-  };
+const LIBRARIES: ("places")[] = ["places"];
+
+interface PlaceResult {
+  description: string;
+  place_id: string;
 }
 
 interface LocationPickerProps {
@@ -43,16 +38,33 @@ export function LocationPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<NominatimResult[]>([]);
+  const [results, setResults] = useState<PlaceResult[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [mapCenter, setMapCenter] = useState<[number, number]>(
-    latitude && longitude ? [latitude, longitude] : [5.6037, -0.187]
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(
+    latitude && longitude
+      ? { lat: latitude, lng: longitude }
+      : { lat: 5.6037, lng: -0.187 }
   );
-  const [markerPos, setMarkerPos] = useState<[number, number] | null>(
-    latitude && longitude ? [latitude, longitude] : null
+  const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(
+    latitude && longitude ? { lat: latitude, lng: longitude } : null
   );
+
+  const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "",
+    libraries: LIBRARIES,
+  });
+
+  useEffect(() => {
+    if (isLoaded && !autocompleteRef.current) {
+      autocompleteRef.current = new google.maps.places.AutocompleteService();
+      geocoderRef.current = new google.maps.Geocoder();
+    }
+  }, [isLoaded]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -64,28 +76,44 @@ export function LocationPicker({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const searchLocation = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setResults([]);
-      return;
-    }
-    setSearching(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query + " Ghana"
-        )}&limit=5&addressdetails=1`,
-        { headers: { "Accept-Language": "en" } }
-      );
-      const data: NominatimResult[] = await res.json();
-      setResults(data);
-      setShowResults(true);
-    } catch {
-      setResults([]);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
+  const searchLocation = useCallback(
+    async (query: string) => {
+      if (query.length < 3 || !autocompleteRef.current) {
+        setResults([]);
+        return;
+      }
+      setSearching(true);
+      try {
+        autocompleteRef.current.getPlacePredictions(
+          {
+            input: query,
+            componentRestrictions: { country: "gh" },
+          },
+          (predictions, status) => {
+            if (
+              status === google.maps.places.PlacesServiceStatus.OK &&
+              predictions
+            ) {
+              setResults(
+                predictions.map((p) => ({
+                  description: p.description,
+                  place_id: p.place_id,
+                }))
+              );
+              setShowResults(true);
+            } else {
+              setResults([]);
+            }
+            setSearching(false);
+          }
+        );
+      } catch {
+        setResults([]);
+        setSearching(false);
+      }
+    },
+    []
+  );
 
   function handleSearchInput(q: string) {
     setSearchQuery(q);
@@ -93,49 +121,49 @@ export function LocationPicker({
     debounceRef.current = setTimeout(() => searchLocation(q), 400);
   }
 
-  function selectResult(result: NominatimResult) {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    const addr = result.address;
-    const locationStr =
-      addr
-        ? [addr.suburb, addr.city || addr.town, addr.state]
-            .filter(Boolean)
-            .join(", ") || result.display_name.split(",").slice(0, 3).join(",")
-        : result.display_name.split(",").slice(0, 3).join(",");
-
-    onChange(locationStr, lat, lng);
-    setSearchQuery(locationStr);
-    setMapCenter([lat, lng]);
-    setMarkerPos([lat, lng]);
-    setShowResults(false);
+  function selectResult(result: PlaceResult) {
+    if (!geocoderRef.current) return;
+    geocoderRef.current.geocode(
+      { placeId: result.place_id },
+      (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
+          const loc = results[0].geometry.location;
+          const lat = loc.lat();
+          const lng = loc.lng();
+          const locationStr = result.description;
+          onChange(locationStr, lat, lng);
+          setSearchQuery(locationStr);
+          setMapCenter({ lat, lng });
+          setMarkerPos({ lat, lng });
+        }
+        setShowResults(false);
+      }
+    );
   }
 
   function handleMapClick(lat: number, lng: number) {
-    setMarkerPos([lat, lng]);
-    setMapCenter([lat, lng]);
+    setMarkerPos({ lat, lng });
+    setMapCenter({ lat, lng });
     reverseGeocode(lat, lng);
   }
 
-  async function reverseGeocode(lat: number, lng: number) {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        { headers: { "Accept-Language": "en" } }
-      );
-      const data: NominatimResult = await res.json();
-      const addr = data.address;
-      const locationStr = addr
-        ? [addr.suburb, addr.city || addr.town, addr.state]
-            .filter(Boolean)
-            .join(", ") || data.display_name.split(",").slice(0, 3).join(",")
-        : data.display_name.split(",").slice(0, 3).join(",");
-
-      onChange(locationStr, lat, lng);
-      setSearchQuery(locationStr);
-    } catch {
+  function reverseGeocode(lat: number, lng: number) {
+    if (!geocoderRef.current) {
       onChange(`${lat.toFixed(6)}, ${lng.toFixed(6)}`, lat, lng);
+      return;
     }
+    geocoderRef.current.geocode(
+      { location: { lat, lng } },
+      (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
+          const locationStr = results[0].formatted_address;
+          onChange(locationStr, lat, lng);
+          setSearchQuery(locationStr);
+        } else {
+          onChange(`${lat.toFixed(6)}, ${lng.toFixed(6)}`, lat, lng);
+        }
+      }
+    );
   }
 
   function clearLocation() {
@@ -213,7 +241,7 @@ export function LocationPicker({
                     onClick={() => selectResult(r)}
                   >
                     <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="line-clamp-2">{r.display_name}</span>
+                    <span className="line-clamp-2">{r.description}</span>
                   </button>
                 ))}
               </div>
@@ -221,7 +249,7 @@ export function LocationPicker({
           </div>
 
           <div className="overflow-hidden rounded-lg border">
-            <LeafletMap
+            <GoogleMapPicker
               center={mapCenter}
               markerPosition={markerPos}
               onMapClick={handleMapClick}
