@@ -1,53 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/hooks/use-business";
 import type { Booking } from "@/types";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { BookingsSkeleton } from "@/components/dashboard/skeletons";
+import { formatDate, formatTime } from "@/lib/utils";
 import { Eye, CheckCircle, XCircle } from "lucide-react";
+
+type BookingTab = "all" | "active" | "upcoming" | "completed" | "cancelled";
+
+type BookingRow = Booking & { services?: { name: string } };
+
+function todayStr() {
+  return new Date().toISOString().split("T")[0];
+}
 
 export default function BookingsPage() {
   const { business } = useBusiness();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tab, setTab] = useState<BookingTab>("all");
   const [search, setSearch] = useState("");
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [firstTimePhones, setFirstTimePhones] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!business) return;
@@ -55,27 +48,31 @@ export default function BookingsPage() {
     let cancelled = false;
     async function load() {
       const supabase = createClient();
-
-      let query = supabase
+      const { data } = await supabase
         .from("bookings")
         .select("*, services(name, price)")
         .eq("business_id", businessId)
         .order("booking_date", { ascending: false })
         .order("start_time", { ascending: false });
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
+      if (cancelled) return;
+      const all = (data as BookingRow[]) || [];
+      setBookings(all);
 
-      const { data } = await query;
-      if (!cancelled) {
-        setBookings((data as Booking[]) || []);
-        setLoading(false);
+      const phoneCounts = new Map<string, number>();
+      for (const b of all) {
+        phoneCounts.set(b.customer_phone, (phoneCounts.get(b.customer_phone) || 0) + 1);
       }
+      const newPhones = new Set<string>();
+      for (const [phone, count] of phoneCounts) {
+        if (count === 1) newPhones.add(phone);
+      }
+      setFirstTimePhones(newPhones);
+      setLoading(false);
     }
     load();
     return () => { cancelled = true; };
-  }, [business, statusFilter, reloadKey]);
+  }, [business, reloadKey]);
 
   function reload() {
     setReloadKey((k) => k + 1);
@@ -97,17 +94,159 @@ export default function BookingsPage() {
     }
   }
 
-  const filtered = bookings.filter((b) => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      b.customer_name.toLowerCase().includes(s) ||
-      b.customer_phone.includes(s)
-    );
-  });
+  const filtered = useMemo(() => {
+    const today = todayStr();
+    let list = bookings;
 
-  if (!business) {
-    return <BookingsSkeleton />;
+    switch (tab) {
+      case "active":
+        list = list.filter(
+          (b) =>
+            b.booking_date === today &&
+            (b.status === "confirmed" || b.status === "pending_deposit")
+        );
+        break;
+      case "upcoming":
+        list = list.filter(
+          (b) =>
+            b.booking_date > today &&
+            (b.status === "confirmed" || b.status === "pending_deposit")
+        );
+        break;
+      case "completed":
+        list = list.filter((b) => b.status === "completed");
+        break;
+      case "cancelled":
+        list = list.filter(
+          (b) =>
+            b.status === "cancelled" ||
+            b.status === "expired" ||
+            b.status === "no_show"
+        );
+        break;
+    }
+
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(
+        (b) =>
+          b.customer_name.toLowerCase().includes(s) ||
+          b.customer_phone.includes(s)
+      );
+    }
+
+    return list;
+  }, [bookings, tab, search]);
+
+  const counts = useMemo(() => {
+    const today = todayStr();
+    return {
+      all: bookings.length,
+      active: bookings.filter(
+        (b) =>
+          b.booking_date === today &&
+          (b.status === "confirmed" || b.status === "pending_deposit")
+      ).length,
+      upcoming: bookings.filter(
+        (b) =>
+          b.booking_date > today &&
+          (b.status === "confirmed" || b.status === "pending_deposit")
+      ).length,
+      completed: bookings.filter((b) => b.status === "completed").length,
+      cancelled: bookings.filter(
+        (b) =>
+          b.status === "cancelled" ||
+          b.status === "expired" ||
+          b.status === "no_show"
+      ).length,
+    };
+  }, [bookings]);
+
+  const isNewClient = (phone: string) => firstTimePhones.has(phone);
+
+  const columns: ColumnDef<BookingRow>[] = useMemo(
+    () => [
+      {
+        accessorKey: "customer_name",
+        header: "Customer",
+        cell: ({ row }) => {
+          const b = row.original;
+          return (
+            <div>
+              <p className="font-medium">{b.customer_name}</p>
+              <p className="text-xs text-muted-foreground">{b.customer_phone}</p>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "services",
+        header: "Service",
+        cell: ({ row }) => row.original.services?.name ?? "—",
+      },
+      {
+        accessorKey: "booking_date",
+        header: "Date & Time",
+        cell: ({ row }) => {
+          const b = row.original;
+          return (
+            <div>
+              <p className="text-sm">{formatDate(b.booking_date)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatTime(b.start_time)} — {formatTime(b.end_time)}
+              </p>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+      {
+        accessorKey: "deposit_amount",
+        header: "Deposit",
+        cell: ({ row }) =>
+          `GHS ${Number(row.original.deposit_amount).toFixed(2)}`,
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedBooking(row.original);
+              setDetailOpen(true);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [firstTimePhones]
+  );
+
+  if (!business) return <BookingsSkeleton />;
+
+  function tabLabel(label: string, count: number) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {label}
+        {count > 0 && (
+          <Badge
+            variant="secondary"
+            className="h-5 min-w-[20px] justify-center px-1.5 text-[10px]"
+          >
+            {count}
+          </Badge>
+        )}
+      </span>
+    );
   }
 
   return (
@@ -117,26 +256,22 @@ export default function BookingsPage() {
         <p className="text-muted-foreground">Manage your appointments</p>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
+          <TabsList>
+            <TabsTrigger value="all">{tabLabel("All", counts.all)}</TabsTrigger>
+            <TabsTrigger value="active">{tabLabel("Active", counts.active)}</TabsTrigger>
+            <TabsTrigger value="upcoming">{tabLabel("Upcoming", counts.upcoming)}</TabsTrigger>
+            <TabsTrigger value="completed">{tabLabel("Done", counts.completed)}</TabsTrigger>
+            <TabsTrigger value="cancelled">{tabLabel("Cancelled", counts.cancelled)}</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <Input
           placeholder="Search by name or phone..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="sm:max-w-xs"
+          className="h-9 w-200 sm:w-40"
         />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending_deposit">Pending Deposit</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-            <SelectItem value="expired">Expired</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {loading ? (
@@ -144,69 +279,45 @@ export default function BookingsPage() {
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No bookings found
+            {tab === "all"
+              ? "No bookings found"
+              : tab === "active"
+                ? "No bookings for today"
+                : tab === "upcoming"
+                  ? "No upcoming bookings"
+                  : tab === "completed"
+                    ? "No completed bookings yet"
+                    : "No cancelled bookings"}
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Deposit</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{booking.customer_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {booking.customer_phone}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {(booking as Booking & { services?: { name: string } }).services?.name}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="text-sm">{booking.booking_date}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {booking.start_time?.slice(0, 5)} — {booking.end_time?.slice(0, 5)}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={booking.status} />
-                    </TableCell>
-                    <TableCell>
-                      GHS {Number(booking.deposit_amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedBooking(booking);
-                          setDetailOpen(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <DataTable
+          columns={columns}
+          data={filtered}
+          rowClassName={(booking) =>
+            isNewClient(booking.customer_phone)
+              ? "bg-emerald-50/60 dark:bg-emerald-950/10"
+              : undefined
+          }
+          mobileCard={(booking) => (
+            <div
+              className="cursor-pointer active:bg-muted/40"
+              onClick={() => {
+                setSelectedBooking(booking);
+                setDetailOpen(true);
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-sm font-medium">{booking.customer_name}</p>
+                <StatusBadge status={booking.status} />
+              </div>
+              <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{booking.services?.name} · {formatTime(booking.start_time)}</span>
+                <span>{formatDate(booking.booking_date)}</span>
+              </div>
+            </div>
+          )}
+        />
       )}
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -227,13 +338,13 @@ export default function BookingsPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">{selectedBooking.booking_date}</p>
+                  <p className="font-medium">{formatDate(selectedBooking.booking_date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Time</p>
                   <p className="font-medium">
-                    {selectedBooking.start_time?.slice(0, 5)} —{" "}
-                    {selectedBooking.end_time?.slice(0, 5)}
+                    {formatTime(selectedBooking.start_time)} —{" "}
+                    {formatTime(selectedBooking.end_time)}
                   </p>
                 </div>
                 <div>
