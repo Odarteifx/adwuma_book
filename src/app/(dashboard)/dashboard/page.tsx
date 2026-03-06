@@ -82,10 +82,10 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">
+        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
           Welcome back, {user.user_metadata?.full_name?.split(" ")[0] || "there"}
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Here&apos;s an overview of {business.name}
         </p>
       </div>

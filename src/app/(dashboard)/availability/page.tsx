@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/hooks/use-business";
 import { DAYS_OF_WEEK } from "@/lib/constants";
 import type { Availability, BlockedDate } from "@/types";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,8 +42,8 @@ interface DaySchedule {
 
 function formatDateRange(dates: string[]): string {
   if (dates.length === 0) return "";
-  if (dates.length === 1) return dates[0];
-  return `${dates[0]} — ${dates[dates.length - 1]}`;
+  if (dates.length === 1) return formatDate(dates[0]);
+  return `${formatDate(dates[0])} — ${formatDate(dates[dates.length - 1])}`;
 }
 
 function groupConsecutiveDates(dates: BlockedDate[]): { dates: BlockedDate[]; label: string }[] {
@@ -255,8 +256,8 @@ export default function AvailabilityPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Availability</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Availability</h2>
+        <p className="text-sm text-muted-foreground">
           Set your working hours and block off dates
         </p>
       </div>
@@ -422,8 +423,8 @@ export default function AvailabilityPage() {
                 {blocking && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                 <CalendarRange className="mr-2 h-3.5 w-3.5" />
                 {dateRange.to && dateRange.to.getTime() !== dateRange.from.getTime()
-                  ? `Block ${dateRange.from.toISOString().split("T")[0]} — ${dateRange.to.toISOString().split("T")[0]}`
-                  : `Block ${dateRange.from.toISOString().split("T")[0]}`}
+                  ? `Block ${formatDate(dateRange.from.toISOString().split("T")[0])} — ${formatDate(dateRange.to.toISOString().split("T")[0])}`
+                  : `Block ${formatDate(dateRange.from.toISOString().split("T")[0])}`}
               </Button>
               <Button
                 variant="ghost"

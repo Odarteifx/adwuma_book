@@ -229,6 +229,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setForm({ ...form, slug: e.target.value.toLowerCase() })
                 }
+                className="max-w-60"
               />
             </div>
           </div>
@@ -240,7 +241,7 @@ export default function SettingsPage() {
                 setForm({ ...form, category: v as BusinessCategory })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="max-w-60">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -269,6 +270,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setForm({ ...form, whatsapp_number: e.target.value })
               }
+              className="max-w-60"
             />
           </div>
           <div className="space-y-2">
