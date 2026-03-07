@@ -1,0 +1,5 @@
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS facebook_url TEXT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS twitter_url TEXT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS tiktok_url TEXT;
