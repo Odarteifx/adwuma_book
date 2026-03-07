@@ -52,6 +52,7 @@ export const serviceSchema = z
   .object({
     name: z.string().min(2, "Service name is required").max(100),
     description: z.string().max(500).optional().nullable(),
+    image_url: z.string().optional().nullable(),
     price: z.number().positive("Price must be greater than 0"),
     duration_minutes: z
       .number()
@@ -92,6 +93,20 @@ export const bookingSchema = z.object({
     .regex(/^\+233[0-9]{9}$/, "Enter a valid Ghana phone number (+233...)"),
   notes: z.string().max(500).optional().nullable(),
 });
+
+export const customerDetailsSchema = z.object({
+  customer_name: z.string().min(2, "Name is required").max(100),
+  customer_email: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Invalid email"),
+  customer_phone: z
+    .string()
+    .regex(/^\+233[0-9]{9}$/, "Enter a valid Ghana phone number (+233...)"),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
 
 export const kbDocSchema = z.object({
   title: z.string().min(2, "Title is required").max(200),

@@ -54,6 +54,11 @@ export interface Business {
   primary_color: string;
   logo_url: string | null;
   banner_url: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  twitter_url?: string | null;
+  linkedin_url?: string | null;
+  tiktok_url?: string | null;
   plan: PlanType;
   plan_expires_at: string | null;
   slot_interval_minutes: number;
@@ -68,6 +73,7 @@ export interface Service {
   business_id: string;
   name: string;
   description: string | null;
+  image_url?: string | null;
   price: number;
   duration_minutes: number;
   deposit_type: DepositType;
@@ -199,4 +205,15 @@ export interface AIMessage {
 export interface TimeSlot {
   time: string;
   available: boolean;
+}
+
+export interface Review {
+  id: string;
+  business_id: string;
+  booking_id: string | null;
+  customer_name: string;
+  customer_email: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
 }
