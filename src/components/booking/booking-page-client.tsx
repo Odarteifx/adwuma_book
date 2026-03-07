@@ -5,85 +5,99 @@ import type { Business, Service, TimeSlot } from "@/types";
 import { ServiceSelector } from "./service-selector";
 import { DateTimePicker } from "./date-time-picker";
 import { CustomerForm } from "./customer-form";
+import { BusinessHeader } from "./business-header";
+import { ReviewsSection } from "./reviews-section";
 import { AIChatWidget } from "@/components/ai/ai-chat-widget";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft } from "lucide-react";
+import type { HeaderTab } from "./business-header";
 
 type Step = "services" | "datetime" | "details";
 
 interface Props {
   business: Business;
   services: Service[];
+  reviewsCount?: number;
 }
 
-export function BookingPageClient({ business, services }: Props) {
+export function BookingPageClient({ business, services, reviewsCount = 0 }: Props) {
   const [step, setStep] = useState<Step>("services");
+  const [headerTab, setHeaderTab] = useState<HeaderTab>("services");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
-  const primaryColor = business.primary_color || "#6366f1";
+  const primaryColor = business.primary_color || undefined;
 
   return (
-    <div
-      className="min-h-screen bg-muted/30"
-      style={{ "--business-primary": primaryColor } as React.CSSProperties}
-    >
-      <header
-        className="border-b px-4 py-6 text-white"
-        style={{ backgroundColor: primaryColor }}
-      >
-        <div className="mx-auto max-w-lg">
-          {business.banner_url && (
-            <img
-              src={business.banner_url}
-              alt=""
-              className="mb-4 h-32 w-full rounded-lg object-cover"
-            />
-          )}
-          <div className="flex items-center gap-3">
-            {business.logo_url && (
-              <img
-                src={business.logo_url}
-                alt=""
-                className="h-12 w-12 rounded-full object-cover"
-              />
-            )}
-            <div>
-              <h1 className="text-xl font-bold">{business.name}</h1>
-              {business.location && (
-                <p className="flex items-center gap-1 text-sm opacity-90">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {business.location}
-                </p>
-              )}
+    <div className="min-h-screen bg-background">
+      <BusinessHeader
+        business={business}
+        servicesCount={services.length}
+        reviewsCount={reviewsCount}
+        primaryColor={primaryColor}
+        activeTab={headerTab}
+        onTabChange={setHeaderTab}
+      />
+
+      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        {/* Reviews tab content */}
+        {headerTab === "reviews" && (
+          <ReviewsSection businessId={business.id} primaryColor={primaryColor} />
+        )}
+
+        {/* About tab content */}
+        {headerTab === "about" && (
+          <div className="rounded-lg border bg-card p-6">
+            <h2 className="text-lg font-semibold">About</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {business.description || "No description available."}
+            </p>
+          </div>
+        )}
+
+        {/* Booking flow - only when Services tab */}
+        {headerTab === "services" && (
+        <>
+        {/* Step indicator & back - only from date screen onward */}
+        {step !== "services" && (
+          <div className="mb-8 flex flex-wrap items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-1 h-9 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                if (step === "datetime") setStep("services");
+                if (step === "details") setStep("datetime");
+              }}
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant={step === "datetime" ? "default" : "secondary"}
+                className="text-xs"
+                style={step === "datetime" && primaryColor ? { backgroundColor: primaryColor } : undefined}
+              >
+                1. Date & time
+              </Badge>
+              <Badge
+                variant={step === "details" ? "default" : "secondary"}
+                className="text-xs"
+                style={step === "details" && primaryColor ? { backgroundColor: primaryColor } : undefined}
+              >
+                2. Details
+              </Badge>
             </div>
           </div>
-          {business.description && (
-            <p className="mt-3 text-sm opacity-90">{business.description}</p>
-          )}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg px-4 py-6">
-        {step !== "services" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-4"
-            onClick={() => {
-              if (step === "datetime") setStep("services");
-              if (step === "details") setStep("datetime");
-            }}
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
-          </Button>
         )}
 
         {step === "services" && (
           <ServiceSelector
             services={services}
+            primaryColor={primaryColor}
             onSelect={(service) => {
               setSelectedService(service);
               setStep("datetime");
@@ -93,8 +107,9 @@ export function BookingPageClient({ business, services }: Props) {
 
         {step === "datetime" && selectedService && (
           <DateTimePicker
-            businessId={business.id}
-            serviceDuration={selectedService.duration_minutes}
+            business={business}
+            service={selectedService}
+            primaryColor={primaryColor}
             onSelect={(date, slot) => {
               setSelectedDate(date);
               setSelectedSlot(slot);
@@ -112,32 +127,18 @@ export function BookingPageClient({ business, services }: Props) {
               service={selectedService}
               date={selectedDate}
               slot={selectedSlot}
+              primaryColor={primaryColor}
             />
           )}
-
-        {selectedService && step !== "services" && (
-          <div className="mt-6 rounded-lg border bg-card p-4">
-            <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-              Your selection
-            </h3>
-            <p className="font-medium">{selectedService.name}</p>
-            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-              <span>GHS {Number(selectedService.price).toFixed(2)}</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {selectedService.duration_minutes} min
-              </span>
-            </div>
-            {selectedDate && selectedSlot && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selectedDate} at {selectedSlot.time}
-              </p>
-            )}
-          </div>
+        </>
         )}
       </main>
 
-      <AIChatWidget businessId={business.id} businessName={business.name} primaryColor={primaryColor} />
+      <AIChatWidget
+        businessId={business.id}
+        businessName={business.name}
+        primaryColor={primaryColor}
+      />
     </div>
   );
 }

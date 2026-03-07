@@ -1,16 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ReviewForm } from "@/components/booking/review-form";
 import { CheckCircle2, Clock, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { formatDate, formatTime } from "@/lib/utils";
 
 interface Props {
@@ -36,74 +31,88 @@ export default async function SuccessPage({ params, searchParams }: Props) {
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("name, primary_color")
+    .select("id, name, primary_color")
     .eq("slug", slug)
     .single();
+
+  if (!business) notFound();
 
   const isConfirmed =
     booking.status === "confirmed" || booking.payment_status === "paid";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+    <div className="flex flex-1 items-center justify-center px-4">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <div
+            className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+              isConfirmed ? "bg-emerald-100 dark:bg-emerald-950/40" : "bg-amber-100 dark:bg-amber-950/40"
+            }`}
+          >
             {isConfirmed ? (
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             )}
           </div>
-          <CardTitle className="text-xl">
-            {isConfirmed ? "Booking Confirmed!" : "Booking Pending"}
-          </CardTitle>
-          <CardDescription>
-            {isConfirmed
-              ? `Your appointment with ${business?.name || "the business"} is confirmed.`
-              : "Your booking is being processed. You'll receive confirmation shortly."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>{booking.customer_name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{formatDate(booking.booking_date)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {formatTime(booking.start_time)} — {formatTime(booking.end_time)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Service</span>
-              <span className="text-sm font-medium">
-                {booking.services?.name}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                Deposit paid
-              </span>
-              <span className="text-sm font-medium">
-                GHS {Number(booking.deposit_amount).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <StatusBadge status={isConfirmed ? "confirmed" : booking.status} />
-            </div>
-          </div>
+          <h1 className="text-lg font-semibold">
+            {isConfirmed ? "Booking confirmed" : "Booking pending"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+              {isConfirmed
+                ? `Your appointment with ${business.name} is confirmed.`
+              : "You'll receive confirmation shortly."}
+          </p>
+        </div>
 
-          <Button asChild className="w-full" variant="outline">
-            <Link href={`/b/${slug}`}>Book another appointment</Link>
-          </Button>
-        </CardContent>
-      </Card>
+        <div className="rounded-lg border p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{booking.customer_name}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{formatDate(booking.booking_date)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>
+              {formatTime(booking.start_time)} — {formatTime(booking.end_time)}
+            </span>
+          </div>
+          <Separator />
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Service</span>
+            <span className="font-medium">{booking.services?.name}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Deposit</span>
+            <span className="font-medium">
+              GHS {Number(booking.deposit_amount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Status</span>
+            <StatusBadge status={isConfirmed ? "confirmed" : booking.status} />
+          </div>
+        </div>
+
+        {/* Review form */}
+        <div className="rounded-lg border p-4">
+          <h3 className="mb-3 text-sm font-medium">Share your experience</h3>
+          <ReviewForm
+            businessId={business.id}
+            bookingId={booking.id}
+            customerName={booking.customer_name}
+            customerEmail={booking.customer_email}
+            primaryColor={business.primary_color || undefined}
+          />
+        </div>
+
+        <Button asChild variant="outline" className="w-full" size="sm">
+          <Link href={`/b/${slug}`}>Book another</Link>
+        </Button>
+      </div>
     </div>
   );
 }

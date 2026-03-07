@@ -1,20 +1,30 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { TimeSlot } from "@/types";
+import type { Business, Service, TimeSlot } from "@/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ServiceSummaryCard } from "./service-summary-card";
+import { cn, formatTime } from "@/lib/utils";
 
 interface Props {
-  businessId: string;
-  serviceDuration: number;
+  business: Business;
+  service: Service;
   onSelect: (date: string, slot: TimeSlot) => void;
+  primaryColor?: string;
 }
 
-export function DateTimePicker({ businessId, serviceDuration, onSelect }: Props) {
+export function DateTimePicker({ business, service, onSelect, primaryColor }: Props) {
+  const businessId = business.id;
+  const serviceDuration = service.duration_minutes;
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [month, setMonth] = useState<Date>(new Date());
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -90,111 +100,134 @@ export function DateTimePicker({ businessId, serviceDuration, onSelect }: Props)
     slots.length > 0 && slots.every((s) => !s.available);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="mb-3 text-lg font-semibold">Pick a date</h2>
-        <div className="relative">
-        {loadingAvailability && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/60">
-            <div className="space-y-2">
-              <Skeleton className="mx-auto h-4 w-32" />
-              <Skeleton className="mx-auto h-4 w-24" />
-            </div>
+    <Card className="overflow-hidden border shadow-sm">
+      <CardHeader className="space-y-1.5 px-6 pb-6 pt-6 sm:px-8 sm:pt-8">
+        <CardTitle className="text-lg font-semibold tracking-tight">Pick date & time</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">
+          Select your preferred date and time slot
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-stretch">
+          {/* Row 1: Card and calendar same height */}
+          <div className="order-2 min-w-0 md:order-1">
+            <ServiceSummaryCard business={business} service={service} />
           </div>
-        )}
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          month={month}
-          onMonthChange={setMonth}
-          disabled={(d) => {
-            if (d < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-            const ds = d.toISOString().split("T")[0];
-            return unavailableDates.has(ds);
-          }}
-          modifiers={{
-            full: (d) => {
-              const ds = d.toISOString().split("T")[0];
-              return fullDates.has(ds);
-            },
-            blocked: (d) => {
-              const ds = d.toISOString().split("T")[0];
-              return blockedDates.has(ds);
-            },
-          }}
-          modifiersClassNames={{
-            full: "line-through text-muted-foreground/50",
-            blocked: "line-through bg-red-50 text-red-300 dark:bg-red-950/20 dark:text-red-800",
-          }}
-          className="rounded-md border"
-        />
-        </div>
-        {(fullDates.size > 0 || blockedDates.size > 0) && (
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            {fullDates.size > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-sm bg-muted-foreground/20" />
-                <span>Fully booked</span>
-              </div>
-            )}
-            {blockedDates.size > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-sm bg-red-100 dark:bg-red-950/30" />
-                <span>Unavailable</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {date && (
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">Pick a time</h2>
-          {loadingSlots ? (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-9 w-full rounded-md" />
-              ))}
-            </div>
-          ) : slots.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">
-              No available slots for this date.
+          <div className="order-1 flex min-w-0 flex-col md:order-2">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Date
             </p>
-          ) : allSlotsUnavailable ? (
-            <div className="flex flex-col items-center gap-2 py-6">
-              <Badge
-                variant="secondary"
-                className="bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-              >
-                Fully booked
-              </Badge>
-              <p className="text-sm text-muted-foreground">
-                All time slots for this date are at capacity. Please pick
-                another date.
-              </p>
+            <div
+              className="relative w-full max-w-full flex-1"
+              style={
+                primaryColor
+                  ? ({ "--calendar-brand": primaryColor } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              {loadingAvailability && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/80">
+                  <div className="space-y-2">
+                    <Skeleton className="mx-auto h-4 w-32" />
+                    <Skeleton className="mx-auto h-4 w-24" />
+                  </div>
+                </div>
+              )}
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                month={month}
+                onMonthChange={setMonth}
+                disabled={(d) => {
+                  if (d < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                  const ds = d.toISOString().split("T")[0];
+                  return unavailableDates.has(ds);
+                }}
+                modifiers={{
+                  full: (d) => {
+                    const ds = d.toISOString().split("T")[0];
+                    return fullDates.has(ds);
+                  },
+                  blocked: (d) => {
+                    const ds = d.toISOString().split("T")[0];
+                    return blockedDates.has(ds);
+                  },
+                }}
+                modifiersClassNames={{
+                  full: "line-through text-muted-foreground/50",
+                  blocked:
+                    "line-through bg-red-50 text-red-300 dark:bg-red-950/20 dark:text-red-800",
+                }}
+                className={cn(
+                  "w-full max-w-full rounded-lg border [--cell-size:clamp(1.75rem,5vw,2.75rem)] sm:[--cell-size:clamp(2rem,6vw,2.75rem)]",
+                  primaryColor &&
+                    "[&_button[data-selected-single=true]]:!bg-[var(--calendar-brand)] [&_button[data-selected-single=true]]:!text-white"
+                )}
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {slots.map((slot) => (
-                <Button
-                  key={slot.time}
-                  variant="outline"
-                  size="sm"
-                  disabled={!slot.available}
-                  className={cn(
-                    "text-sm",
-                    !slot.available && "opacity-40 line-through"
-                  )}
-                  onClick={() => onSelect(dateStr, slot)}
-                >
-                  {slot.time}
-                </Button>
-              ))}
+            {(fullDates.size > 0 || blockedDates.size > 0) && (
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                {fullDates.size > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                    Fully booked
+                  </span>
+                )}
+                {blockedDates.size > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-red-200 dark:bg-red-900/50" />
+                    Unavailable
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Row 2: Time picker underneath */}
+          {date && (
+            <div className="border-t pt-6 md:col-span-2 md:pt-8">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Time
+              </p>
+              {loadingSlots ? (
+                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="h-9 w-full rounded-md" />
+                  ))}
+                </div>
+              ) : slots.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No available slots for this date.
+                </p>
+              ) : allSlotsUnavailable ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 py-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+                  Fully booked. Please pick another date.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
+                  {slots.map((slot) => (
+                    <Button
+                      key={slot.time}
+                      variant="outline"
+                      size="sm"
+                      disabled={!slot.available}
+                      className={cn(
+                        "min-h-9",
+                        "bg-background text-sm font-normal",
+                        !slot.available && "opacity-40 line-through"
+                      )}
+                      onClick={() => onSelect(dateStr, slot)}
+                    >
+                      {formatTime(slot.time)}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

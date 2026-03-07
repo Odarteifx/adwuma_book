@@ -47,10 +47,16 @@ export default async function BookingPage({ params }: Props) {
     .eq("is_active", true)
     .order("sort_order");
 
+  const { count: reviewsCount } = await supabase
+    .from("reviews")
+    .select("*", { count: "exact", head: true })
+    .eq("business_id", business.id);
+
   return (
     <BookingPageClient
       business={business as Business}
       services={(services as Service[]) || []}
+      reviewsCount={reviewsCount ?? 0}
     />
   );
 }

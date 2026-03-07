@@ -1,20 +1,39 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import type { Service } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ServiceCard } from "./service-card";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface Props {
   services: Service[];
   onSelect: (service: Service) => void;
+  primaryColor?: string;
 }
 
-export function ServiceSelector({ services, onSelect }: Props) {
+function filterServices(services: Service[], query: string): Service[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return services;
+  return services.filter(
+    (s) =>
+      s.name.toLowerCase().includes(q) ||
+      (s.description?.toLowerCase().includes(q) ?? false)
+  );
+}
+
+export function ServiceSelector({ services, onSelect, primaryColor }: Props) {
+  const [search, setSearch] = useState("");
+  const filteredServices = useMemo(
+    () => filterServices(services, search),
+    [services, search]
+  );
+
   if (services.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-muted-foreground">
+      <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+        <p className="text-sm text-muted-foreground">
           No services available at the moment.
         </p>
       </div>
@@ -23,49 +42,56 @@ export function ServiceSelector({ services, onSelect }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Choose a service</h2>
-      <div className="grid gap-3">
-        {services.map((service) => {
-          const deposit =
-            service.deposit_type === "percentage"
-              ? (Number(service.price) * Number(service.deposit_value)) / 100
-              : Number(service.deposit_value);
-
-          return (
-            <Card
-              key={service.id}
-              className="cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => onSelect(service)}
-            >
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <h3 className="font-medium">{service.name}</h3>
-                  {service.description && (
-                    <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
-                      {service.description}
-                    </p>
-                  )}
-                  <div className="mt-2 flex items-center gap-3 text-sm">
-                    <span className="font-semibold">
-                      GHS {Number(service.price).toFixed(2)}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" />
-                      {service.duration_minutes} min
-                    </span>
-                    <span className="text-muted-foreground">
-                      Deposit: GHS {deposit.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="text-center sm:text-left">
+        <h2 className="text-lg font-semibold tracking-tight">Choose a service</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Select the service you&apos;d like to book
+        </p>
       </div>
+      <div
+        className="relative"
+        style={
+          primaryColor
+            ? ({ "--search-focus": primaryColor } as React.CSSProperties)
+            : undefined
+        }
+      >
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search services..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className={cn(
+            "h-10 pl-9 transition-colors",
+            primaryColor &&
+              "focus-visible:border-[var(--search-focus)] focus-visible:ring-[var(--search-focus)]"
+          )}
+          aria-label="Search services"
+        />
+      </div>
+      {filteredServices.length === 0 ? (
+        <div className="flex min-h-[120px] flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            No services match &quot;{search}&quot;
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Try a different search term
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredServices.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              variant="select"
+              primaryColor={primaryColor}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,22 +1,32 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { Business, Service, TimeSlot } from "@/types";
-import { bookingSchema } from "@/lib/validations";
+import { customerDetailsSchema, type CustomerDetailsInput } from "@/lib/validations";
 import { RESERVATION_EXPIRY_MINUTES } from "@/lib/constants";
+import { formatDate, formatTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ServiceSummaryCard } from "./service-summary-card";
 import { toast } from "sonner";
 import { Loader2, Lock } from "lucide-react";
 
@@ -25,16 +35,20 @@ interface Props {
   service: Service;
   date: string;
   slot: TimeSlot;
+  primaryColor?: string;
 }
 
-export function CustomerForm({ business, service, date, slot }: Props) {
+export function CustomerForm({ business, service, date, slot, primaryColor }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    customer_name: "",
-    customer_email: "",
-    customer_phone: "+233",
-    notes: "",
+
+  const form = useForm<CustomerDetailsInput>({
+    resolver: zodResolver(customerDetailsSchema),
+    defaultValues: {
+      customer_name: "",
+      customer_email: "",
+      customer_phone: "+233",
+      notes: "",
+    },
   });
 
   const deposit =
@@ -42,9 +56,7 @@ export function CustomerForm({ business, service, date, slot }: Props) {
       ? (Number(service.price) * Number(service.deposit_value)) / 100
       : Number(service.deposit_value);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
+  async function onSubmit(values: CustomerDetailsInput) {
     const endMinutes =
       parseInt(slot.time.split(":")[0]) * 60 +
       parseInt(slot.time.split(":")[1]) +
@@ -55,19 +67,11 @@ export function CustomerForm({ business, service, date, slot }: Props) {
       service_id: service.id,
       booking_date: date,
       start_time: slot.time,
-      customer_name: form.customer_name,
-      customer_email: form.customer_email || null,
-      customer_phone: form.customer_phone,
-      notes: form.notes || null,
+      customer_name: values.customer_name,
+      customer_email: values.customer_email || null,
+      customer_phone: values.customer_phone,
+      notes: values.notes || null,
     };
-
-    const parsed = bookingSchema.safeParse(payload);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-
-    setLoading(true);
 
     const res = await fetch("/api/bookings", {
       method: "POST",
@@ -85,17 +89,15 @@ export function CustomerForm({ business, service, date, slot }: Props) {
 
     if (!res.ok) {
       toast.error(data.error || "Failed to create booking");
-      setLoading(false);
       return;
     }
 
-    // Initialize payment
     const payRes = await fetch("/api/payments/initialize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         booking_id: data.booking.id,
-        email: form.customer_email || `${form.customer_phone}@adwumabook.com`,
+        email: values.customer_email || `${values.customer_phone}@adwumabook.com`,
         callback_url: `${window.location.origin}/b/${business.slug}/success?booking_id=${data.booking.id}`,
       }),
     });
@@ -104,7 +106,6 @@ export function CustomerForm({ business, service, date, slot }: Props) {
 
     if (!payRes.ok) {
       toast.error(payData.error || "Failed to initialize payment");
-      setLoading(false);
       return;
     }
 
@@ -116,85 +117,137 @@ export function CustomerForm({ business, service, date, slot }: Props) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your details</CardTitle>
-        <CardDescription>
-          Complete your booking for {service.name} on {date} at {slot.time}
+    <Card className="overflow-hidden border shadow-sm">
+      <CardHeader className="space-y-1.5 px-6 pb-6 pt-6 sm:px-8 sm:pt-8">
+        <CardTitle className="text-lg font-semibold tracking-tight">Your details</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">
+          Enter your information to complete the booking
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
-            <Input
-              id="name"
-              placeholder="Kwame Asante"
-              value={form.customer_name}
-              onChange={(e) =>
-                setForm({ ...form, customer_name: e.target.value })
-              }
-              required
+      <CardContent className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
+        <div className="grid min-h-0 gap-8 md:grid-cols-[minmax(200px,1fr)_minmax(0,1.5fr)] md:items-stretch">
+          <div className="order-2 min-w-0 md:order-1 md:min-h-0">
+            <ServiceSummaryCard
+              business={business}
+              service={service}
+              selectedDate={formatDate(date)}
+              selectedTime={formatTime(slot.time)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone number</Label>
-            <Input
-              id="phone"
-              placeholder="+233241234567"
-              value={form.customer_phone}
-              onChange={(e) =>
-                setForm({ ...form, customer_phone: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email (optional)</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.customer_email}
-              onChange={(e) =>
-                setForm({ ...form, customer_email: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any special requests..."
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={2}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <div className="w-full rounded-lg bg-muted p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Deposit required</span>
-              <span className="text-lg font-bold">
-                GHS {deposit.toFixed(2)}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              You have {RESERVATION_EXPIRY_MINUTES} minutes to complete
-              payment after booking.
-            </p>
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Lock className="mr-2 h-4 w-4" />
-            )}
-            Pay Deposit & Confirm
-          </Button>
-        </CardFooter>
-      </form>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex min-w-0 flex-col space-y-6 lg:min-h-0 lg:overflow-auto"
+            >
+              <div className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="customer_name"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium">Full name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Kwame Asante"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="customer_phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium">Phone number</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+233241234567"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="customer_email"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium">Email (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          className="h-10"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium">Notes (optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Any special requests..."
+                          rows={3}
+                          className="min-h-[80px] resize-none"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator className="my-2" />
+
+              <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                <span className="text-sm text-muted-foreground">
+                  Deposit · {RESERVATION_EXPIRY_MINUTES} min to pay
+                </span>
+                <span className="text-sm font-semibold">GHS {deposit.toFixed(2)}</span>
+              </div>
+
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={form.formState.isSubmitting}
+                style={
+                  primaryColor
+                    ? {
+                        backgroundColor: primaryColor,
+                        color: "white",
+                        borderColor: primaryColor,
+                      }
+                    : undefined
+                }
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Lock className="mr-2 h-4 w-4" />
+                )}
+                Pay Deposit & Confirm
+              </Button>
+            </form>
+          </Form>
+        </div>
+      </CardContent>
     </Card>
   );
 }
