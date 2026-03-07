@@ -39,7 +39,7 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r bg-muted/30 md:block">
         <div className="flex h-16 items-center border-b px-6">
-          <h1 className="text-lg font-bold">Adwuma Book</h1>
+          <h1 className="text-lg font-bold text-primary">Adwuma Book</h1>
         </div>
         <SidebarNav />
       </aside>

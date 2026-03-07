@@ -43,6 +43,13 @@ export default function SettingsPage() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [primaryColor, setPrimaryColor] = useState("#6366f1");
+  const [socialLinks, setSocialLinks] = useState({
+    facebook_url: "",
+    instagram_url: "",
+    twitter_url: "",
+    linkedin_url: "",
+    tiktok_url: "",
+  });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -73,6 +80,13 @@ export default function SettingsPage() {
         setLatitude(data.latitude ?? null);
         setLongitude(data.longitude ?? null);
         setPrimaryColor(data.primary_color);
+        setSocialLinks({
+          facebook_url: data.facebook_url || "",
+          instagram_url: data.instagram_url || "",
+          twitter_url: data.twitter_url || "",
+          linkedin_url: data.linkedin_url || "",
+          tiktok_url: data.tiktok_url || "",
+        });
       }
     }
     load();
@@ -100,6 +114,11 @@ export default function SettingsPage() {
         latitude,
         longitude,
         primary_color: primaryColor,
+        facebook_url: socialLinks.facebook_url || null,
+        instagram_url: socialLinks.instagram_url || null,
+        twitter_url: socialLinks.twitter_url || null,
+        linkedin_url: socialLinks.linkedin_url || null,
+        tiktok_url: socialLinks.tiktok_url || null,
       })
       .eq("id", business.id);
 
@@ -284,6 +303,72 @@ export default function SettingsPage() {
                 setLatitude(lat);
                 setLongitude(lng);
               }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Social Media</CardTitle>
+          <CardDescription>
+            Add links to your social profiles (shown on your booking page)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Facebook</Label>
+            <Input
+              placeholder="https://facebook.com/yourpage"
+              value={socialLinks.facebook_url}
+              onChange={(e) =>
+                setSocialLinks({ ...socialLinks, facebook_url: e.target.value })
+              }
+              className="max-w-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Instagram</Label>
+            <Input
+              placeholder="https://instagram.com/yourpage"
+              value={socialLinks.instagram_url}
+              onChange={(e) =>
+                setSocialLinks({ ...socialLinks, instagram_url: e.target.value })
+              }
+              className="max-w-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Twitter / X</Label>
+            <Input
+              placeholder="https://twitter.com/yourpage"
+              value={socialLinks.twitter_url}
+              onChange={(e) =>
+                setSocialLinks({ ...socialLinks, twitter_url: e.target.value })
+              }
+              className="max-w-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>LinkedIn</Label>
+            <Input
+              placeholder="https://linkedin.com/company/yourpage"
+              value={socialLinks.linkedin_url}
+              onChange={(e) =>
+                setSocialLinks({ ...socialLinks, linkedin_url: e.target.value })
+              }
+              className="max-w-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>TikTok</Label>
+            <Input
+              placeholder="https://tiktok.com/@yourpage"
+              value={socialLinks.tiktok_url}
+              onChange={(e) =>
+                setSocialLinks({ ...socialLinks, tiktok_url: e.target.value })
+              }
+              className="max-w-md"
             />
           </div>
         </CardContent>

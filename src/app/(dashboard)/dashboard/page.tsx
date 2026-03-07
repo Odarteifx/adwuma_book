@@ -58,24 +58,28 @@ export default async function DashboardPage() {
       value: totalBookings || 0,
       icon: CalendarCheck,
       description: "All time",
+      iconClass: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40",
     },
     {
       title: "Active Bookings",
       value: confirmedBookings || 0,
       icon: Users,
       description: "Confirmed",
+      iconClass: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/40",
     },
     {
       title: "Revenue",
       value: `GHS ${totalRevenue.toFixed(2)}`,
       icon: CreditCard,
       description: "Deposits collected",
+      iconClass: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40",
     },
     {
       title: "Today",
       value: todayBookings || 0,
       icon: TrendingUp,
       description: "Bookings today",
+      iconClass: "text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-950/40",
     },
   ];
 
@@ -97,7 +101,9 @@ export default async function DashboardPage() {
               <CardTitle className="text-sm font-medium">
                 {stat.title}
               </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <div className={`rounded-lg p-2 ${stat.iconClass}`}>
+                <stat.icon className="h-4 w-4" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>

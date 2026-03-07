@@ -61,7 +61,7 @@ export function DashboardHeader({
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <div className="border-b px-4 py-4">
-            <h2 className="text-lg font-bold">Adwuma Book</h2>
+            <h2 className="text-lg font-bold text-primary">Adwuma Book</h2>
           </div>
           <SidebarNav />
         </SheetContent>

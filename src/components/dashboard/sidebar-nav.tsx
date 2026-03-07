@@ -12,6 +12,7 @@ import {
   BarChart3,
   Bot,
   Settings,
+  Star,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/availability", label: "Availability", icon: Clock },
   { href: "/bookings", label: "Bookings", icon: CalendarCheck },
   { href: "/payments", label: "Payments", icon: CreditCard },
+  { href: "/reviews", label: "Reviews", icon: Star },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/ai-manager", label: "AI Assistant", icon: Bot },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -41,7 +43,7 @@ export function SidebarNav() {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               isActive
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >

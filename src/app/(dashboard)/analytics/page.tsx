@@ -19,13 +19,17 @@ import {
 import { AnalyticsSkeleton } from "@/components/dashboard/skeletons";
 import { CalendarCheck, CreditCard, TrendingUp, Bot } from "lucide-react";
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
 
 interface DailyMetric {
@@ -171,7 +175,9 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium">
               Total Bookings
             </CardTitle>
-            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+              <CalendarCheck className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{metrics.totalBookings}</p>
@@ -183,7 +189,9 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+              <CreditCard className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
@@ -197,7 +205,9 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium">
               Conversion Rate
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+              <TrendingUp className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{metrics.conversionRate}%</p>
@@ -211,7 +221,9 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium">
               AI Conversations
             </CardTitle>
-            <Bot className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-violet-100 p-2 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400">
+              <Bot className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{metrics.aiChats}</p>
@@ -228,27 +240,45 @@ export default function AnalyticsPage() {
             <CardTitle>Bookings Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(d) => d.slice(5)}
-                    fontSize={12}
-                  />
-                  <YAxis fontSize={12} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="bookings"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              config={{
+                bookings: { label: "Bookings", color: "var(--chart-1)" },
+                date: { label: "Date" },
+              }}
+              className="h-64 w-full"
+            >
+              <LineChart data={dailyData} margin={{ left: 12, right: 12 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(d) => d.slice(5)}
+                />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={(v) =>
+                        new Date(v).toLocaleDateString("en-GB", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      }
+                    />
+                  }
+                />
+                <Line
+                  type="monotone"
+                  dataKey="bookings"
+                  stroke="var(--color-bookings)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
         <Card>
@@ -256,32 +286,41 @@ export default function AnalyticsPage() {
             <CardTitle>Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(d) => d.slice(5)}
-                    fontSize={12}
-                  />
-                  <YAxis fontSize={12} />
-                  <Tooltip
-                    formatter={(value) => [
-                      `GHS ${Number(value).toFixed(2)}`,
-                      "Revenue",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="hsl(var(--chart-2))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              config={{
+                revenue: { label: "Revenue", color: "var(--chart-2)" },
+                date: { label: "Date" },
+              }}
+              className="h-64 w-full"
+            >
+              <LineChart data={dailyData} margin={{ left: 12, right: 12 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(d) => d.slice(5)}
+                />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      itemFormatter={(value) =>
+                        `GHS ${Number(value).toFixed(2)}`
+                      }
+                    />
+                  }
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="var(--color-revenue)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>

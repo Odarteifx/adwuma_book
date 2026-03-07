@@ -125,7 +125,9 @@ export default function PaymentsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+              <CreditCard className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">GHS {totalRevenue.toFixed(2)}</p>
@@ -134,7 +136,9 @@ export default function PaymentsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+              <TrendingUp className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">GHS {monthRevenue.toFixed(2)}</p>
@@ -143,7 +147,9 @@ export default function PaymentsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Today</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+              <Calendar className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">GHS {todayRevenue.toFixed(2)}</p>
