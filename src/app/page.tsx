@@ -102,7 +102,7 @@ export default function LandingPage() {
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_40%_at_50%_60%,var(--color-primary)/0.08,transparent)]" />
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-32">
-            <div className="mx-auto max-w-3xl text-center">
+            <div className="mx-auto max-w-3xl animate-in fade-in duration-500 text-center">
               <Badge variant="secondary" className="mb-6">
                 Built for Ghanaian service businesses
               </Badge>
@@ -153,10 +153,11 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature) => (
+              {features.map((feature, i) => (
                 <div
                   key={feature.title}
-                  className="group rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
+                  className="group animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-forwards rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
+                  style={{ "--tw-animation-delay": `${i * 75}ms` } as React.CSSProperties}
                 >
                   <div
                     className={`mb-4 inline-flex rounded-lg p-2.5 ${feature.color}`}

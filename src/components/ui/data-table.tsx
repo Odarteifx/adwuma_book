@@ -101,7 +101,7 @@ export function DataTable<TData, TValue>({
             rows.map((row, i) => (
               <div
                 key={row.id}
-                className={`px-3 py-2.5 ${i !== 0 ? "border-t" : ""} ${rowClassName?.(row.original) ?? ""}`}
+                className={`min-h-[60px] px-4 py-3 ${i !== 0 ? "border-t" : ""} ${rowClassName?.(row.original) ?? ""}`}
               >
                 {mobileCard(row.original)}
               </div>
@@ -115,30 +115,34 @@ export function DataTable<TData, TValue>({
       )}
 
       {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </p>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[44px] flex-1 sm:min-h-0 sm:flex-initial"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[44px] flex-1 sm:min-h-0 sm:flex-initial"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}

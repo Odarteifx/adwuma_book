@@ -41,7 +41,7 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="animate-in fade-in duration-300 space-y-4">
         <h2 className="text-lg font-semibold">Reviews</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -60,8 +60,8 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
       : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="animate-in fade-in duration-300 space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Reviews</h2>
         {reviews.length > 0 && (
           <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
       </div>
 
       {reviews.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center">
+        <div className="rounded-xl border border-dashed py-16 text-center">
           <p className="text-sm text-muted-foreground">
             No reviews yet. Be the first to share your experience!
           </p>
@@ -113,7 +113,7 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
                       />
                     ))}
                   </div>
-                  <span className="text-sm font-medium">{review.customer_name}</span>
+                  <span className="text-sm font-semibold">{review.customer_name}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {formatReviewDate(review.created_at)}

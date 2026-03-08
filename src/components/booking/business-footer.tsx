@@ -24,10 +24,10 @@ export function BusinessFooter({ business }: Props) {
           : undefined
       }
     >
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <div className="flex flex-col items-center gap-1 sm:items-start">
-            <div className="flex items-center gap-2">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
+        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:justify-between sm:items-start sm:gap-8 sm:text-left">
+          <div className="flex flex-col items-center gap-2 sm:items-start">
+            <div className="flex items-center gap-2.5">
               {business.logo_url && (
                 <img
                   src={business.logo_url}
@@ -35,17 +35,31 @@ export function BusinessFooter({ business }: Props) {
                   className="h-8 w-8 rounded-full object-cover"
                 />
               )}
-              <span className="font-medium">{business.name}</span>
+              <span className="font-semibold text-foreground">{business.name}</span>
             </div>
             {business.location && (
-              <p className="flex items-center gap-1 text-sm text-muted-foreground">
+              <a
+                href={
+                  business.latitude != null && business.longitude != null
+                    ? `https://www.google.com/maps?q=${business.latitude},${business.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.location)}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="View location on Google Maps"
+              >
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
                 {business.location}
-              </p>
+              </a>
             )}
           </div>
           {hasSocial && (
-            <div className="flex items-center gap-3">
+            <div className="flex w-full flex-row flex-wrap items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end sm:justify-start sm:gap-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Share
+              </span>
+              <div className="flex items-center gap-0.5 sm:gap-1">
               {business.facebook_url && (
                 <a
                   href={business.facebook_url}
@@ -53,8 +67,8 @@ export function BusinessFooter({ business }: Props) {
                   rel="noopener noreferrer"
                   className={
                     primaryColor
-                      ? "text-muted-foreground transition-colors hover:text-[var(--footer-accent)]"
-                      : "text-muted-foreground transition-colors hover:text-foreground"
+                      ? "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[var(--footer-accent)] active:bg-muted sm:min-h-0 sm:min-w-0"
+                      : "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0"
                   }
                   aria-label="Facebook"
                 >
@@ -68,8 +82,8 @@ export function BusinessFooter({ business }: Props) {
                   rel="noopener noreferrer"
                   className={
                     primaryColor
-                      ? "text-muted-foreground transition-colors hover:text-[var(--footer-accent)]"
-                      : "text-muted-foreground transition-colors hover:text-foreground"
+                      ? "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[var(--footer-accent)] active:bg-muted sm:min-h-0 sm:min-w-0"
+                      : "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0"
                   }
                   aria-label="Instagram"
                 >
@@ -83,10 +97,10 @@ export function BusinessFooter({ business }: Props) {
                   rel="noopener noreferrer"
                   className={
                     primaryColor
-                      ? "text-muted-foreground transition-colors hover:text-[var(--footer-accent)]"
-                      : "text-muted-foreground transition-colors hover:text-foreground"
+                      ? "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[var(--footer-accent)] active:bg-muted sm:min-h-0 sm:min-w-0"
+                      : "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0"
                   }
-                  aria-label="Twitter"
+                  aria-label="X"
                 >
                   <Twitter className="h-4 w-4" />
                 </a>
@@ -98,8 +112,8 @@ export function BusinessFooter({ business }: Props) {
                   rel="noopener noreferrer"
                   className={
                     primaryColor
-                      ? "text-muted-foreground transition-colors hover:text-[var(--footer-accent)]"
-                      : "text-muted-foreground transition-colors hover:text-foreground"
+                      ? "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[var(--footer-accent)] active:bg-muted sm:min-h-0 sm:min-w-0"
+                      : "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0"
                   }
                   aria-label="LinkedIn"
                 >
@@ -113,8 +127,8 @@ export function BusinessFooter({ business }: Props) {
                   rel="noopener noreferrer"
                   className={
                     primaryColor
-                      ? "text-muted-foreground transition-colors hover:text-[var(--footer-accent)]"
-                      : "text-muted-foreground transition-colors hover:text-foreground"
+                      ? "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[var(--footer-accent)] active:bg-muted sm:min-h-0 sm:min-w-0"
+                      : "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0"
                   }
                   aria-label="TikTok"
                 >
@@ -127,10 +141,11 @@ export function BusinessFooter({ business }: Props) {
                   </svg>
                 </a>
               )}
+              </div>
             </div>
           )}
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground sm:mt-6">
+        <p className="mt-6 text-center text-xs text-muted-foreground sm:mt-10">
           Powered by{" "}
           <Link
             href="/"

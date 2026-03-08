@@ -22,7 +22,7 @@ export default async function BookingLayout({ children, params }: Props) {
   if (!business) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-[100dvh] flex-col bg-background">
       <main className="flex flex-1 flex-col">{children}</main>
       <BusinessFooter business={business as Business} />
     </div>
