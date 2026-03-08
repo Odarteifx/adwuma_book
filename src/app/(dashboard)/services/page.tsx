@@ -235,10 +235,10 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+          <h2 className="text-lg font-bold tracking-tight sm:text-2xl">
             Services
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -252,7 +252,7 @@ export default function ServicesPage() {
               Add Service
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {editingId ? "Edit Service" : "New Service"}
@@ -319,7 +319,7 @@ export default function ServicesPage() {
                   className="resize-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-sm">Price (GHS)</Label>
                   <Input
@@ -349,7 +349,7 @@ export default function ServicesPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-sm">Deposit type</Label>
                   <Select
@@ -413,7 +413,7 @@ export default function ServicesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <Card
               key={service.id}
@@ -449,11 +449,11 @@ export default function ServicesPage() {
                 <p className="text-xs text-muted-foreground">
                   Deposit: {depositDisplay(service)}
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 flex-1 text-xs"
+                    className="h-9 min-h-[44px] flex-1 text-xs sm:h-8 sm:min-h-0"
                     onClick={() => openEdit(service)}
                   >
                     <Pencil className="mr-1 h-3 w-3" />
@@ -462,7 +462,7 @@ export default function ServicesPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 text-destructive hover:bg-destructive/10"
+                    className="h-9 min-h-[44px] text-destructive hover:bg-destructive/10 sm:h-8 sm:min-h-0"
                     onClick={() => openDeleteConfirm(service)}
                   >
                     <Trash2 className="h-3 w-3" />

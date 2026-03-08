@@ -166,10 +166,10 @@ export default function AIManagerPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-w-0 space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">AI Assistant</h2>
+          <h2 className="text-lg font-bold tracking-tight sm:text-2xl">AI Assistant</h2>
           <p className="text-muted-foreground">
             Train your AI by adding FAQs, policies, and business info
           </p>
@@ -181,7 +181,7 @@ export default function AIManagerPage() {
               Add Document
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
                 {editingId ? "Edit Document" : "New Document"}

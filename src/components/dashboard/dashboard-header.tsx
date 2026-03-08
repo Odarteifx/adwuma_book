@@ -14,7 +14,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
-import { LogOut, Menu, ExternalLink } from "lucide-react";
+import { LogOut, Menu, ExternalLink, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 interface DashboardHeaderProps {
   userEmail: string;
@@ -51,7 +52,7 @@ export function DashboardHeader({
   const resolvedAvatarUrl = oauthAvatarUrl || (!gravatarFailed ? gravatarUrl : undefined);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-14 min-h-[52px] items-center gap-2 border-b bg-background px-3 sm:gap-4 sm:px-6 md:h-16">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -70,16 +71,31 @@ export function DashboardHeader({
       <div className="flex-1" />
 
       {businessSlug && (
-        <Button variant="outline" size="sm" asChild>
-          <a
-            href={`/b/${businessSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="sm" className="h-9 min-h-[44px] shrink-0 px-3 sm:min-h-9 sm:px-4" asChild>
+            <a
+              href={`/b/${businessSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-3.5 w-3.5 sm:mr-2" />
+              <span className="hidden sm:inline">View Booking Page</span>
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0 min-h-[44px] min-w-[44px] sm:min-h-8 sm:min-w-8"
+            onClick={async () => {
+              const url = `${window.location.origin}/b/${businessSlug}`;
+              await navigator.clipboard.writeText(url);
+              toast.success("Booking link copied to clipboard");
+            }}
+            aria-label="Copy booking link"
           >
-            <ExternalLink className="mr-2 h-3.5 w-3.5" />
-            View Booking Page
-          </a>
-        </Button>
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )}
 
       <DropdownMenu>

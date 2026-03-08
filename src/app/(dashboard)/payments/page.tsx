@@ -115,44 +115,44 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Payments</h2>
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Payments</h2>
         <p className="text-muted-foreground">Track deposits and revenue</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">Total Revenue</CardTitle>
             <div className="rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <CreditCard className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">GHS {totalRevenue.toFixed(2)}</p>
+            <p className="text-lg font-bold sm:text-2xl">GHS {totalRevenue.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">This Month</CardTitle>
             <div className="rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
               <TrendingUp className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">GHS {monthRevenue.toFixed(2)}</p>
+            <p className="text-lg font-bold sm:text-2xl">GHS {monthRevenue.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Today</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">Today</CardTitle>
             <div className="rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
               <Calendar className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">GHS {todayRevenue.toFixed(2)}</p>
+            <p className="text-lg font-bold sm:text-2xl">GHS {todayRevenue.toFixed(2)}</p>
           </CardContent>
         </Card>
       </div>

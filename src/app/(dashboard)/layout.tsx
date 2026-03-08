@@ -36,7 +36,7 @@ export default async function DashboardLayout({
   const gravatarUrl = `https://www.gravatar.com/avatar/${gravatarHash}?s=80&d=404`;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden md:flex-row">
       <aside className="hidden w-64 shrink-0 border-r bg-muted/30 md:block">
         <div className="flex h-16 items-center border-b px-6">
           <h1 className="text-lg font-bold text-primary">Adwuma Book</h1>
@@ -51,7 +51,7 @@ export default async function DashboardLayout({
           gravatarUrl={gravatarUrl}
           businessSlug={business.slug}
         />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

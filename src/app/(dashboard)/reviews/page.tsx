@@ -80,19 +80,19 @@ export default function ReviewsPage() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Reviews</h2>
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Reviews</h2>
         <p className="text-muted-foreground">
           Customer feedback and performance analytics
         </p>
       </div>
 
       {/* Analytics cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium sm:text-sm">
               Average Rating
             </CardTitle>
             <div className="rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
@@ -100,7 +100,7 @@ export default function ReviewsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-lg font-bold sm:text-2xl">
               {analytics?.averageRating?.toFixed(1) ?? "—"}
             </p>
             <p className="text-xs text-muted-foreground">Out of 5</p>
@@ -108,7 +108,7 @@ export default function ReviewsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium sm:text-sm">
               Total Reviews
             </CardTitle>
             <div className="rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
@@ -116,19 +116,19 @@ export default function ReviewsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{analytics?.totalReviews ?? 0}</p>
+            <p className="text-lg font-bold sm:text-2xl">{analytics?.totalReviews ?? 0}</p>
             <p className="text-xs text-muted-foreground">Customer feedback</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">5-Star Reviews</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">5-Star Reviews</CardTitle>
             <div className="rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <TrendingUp className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-lg font-bold sm:text-2xl">
               {analytics?.ratingDistribution?.[5] ?? 0}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -145,10 +145,10 @@ export default function ReviewsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">1–2 Star</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">1–2 Star</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-lg font-bold sm:text-2xl">
               {(analytics?.ratingDistribution?.[1] ?? 0) +
                 (analytics?.ratingDistribution?.[2] ?? 0)}
             </p>
@@ -158,7 +158,7 @@ export default function ReviewsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Rating Distribution</CardTitle>
@@ -169,7 +169,7 @@ export default function ReviewsPage() {
                 count: { label: "Reviews", color: "var(--chart-4)" },
                 rating: { label: "Rating" },
               }}
-              className="h-64 w-full"
+              className="h-56 min-w-0 w-full sm:h-64"
             >
               <BarChart
                 data={ratingChartData}
@@ -203,7 +203,7 @@ export default function ReviewsPage() {
                 average: { label: "Avg Rating", color: "var(--chart-2)" },
                 date: { label: "Date" },
               }}
-              className="h-64 w-full"
+              className="h-56 min-w-0 w-full sm:h-64"
             >
               <BarChart
                 data={

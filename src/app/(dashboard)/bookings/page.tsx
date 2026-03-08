@@ -250,15 +250,16 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Bookings</h2>
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Bookings</h2>
         <p className="text-muted-foreground">Manage your appointments</p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="min-w-0 overflow-x-auto sm:overflow-visible">
         <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
-          <TabsList>
+          <TabsList className="inline-flex w-max min-w-0">
             <TabsTrigger value="all">{tabLabel("All", counts.all)}</TabsTrigger>
             <TabsTrigger value="active">{tabLabel("Active", counts.active)}</TabsTrigger>
             <TabsTrigger value="upcoming">{tabLabel("Upcoming", counts.upcoming)}</TabsTrigger>
@@ -266,11 +267,12 @@ export default function BookingsPage() {
             <TabsTrigger value="cancelled">{tabLabel("Cancelled", counts.cancelled)}</TabsTrigger>
           </TabsList>
         </Tabs>
+        </div>
         <Input
           placeholder="Search by name or phone..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-9 w-200 sm:w-40"
+          className="h-10 w-full min-w-0 sm:w-48"
         />
       </div>
 
@@ -321,13 +323,13 @@ export default function BookingsPage() {
       )}
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <p className="text-muted-foreground">Customer</p>
                   <p className="font-medium">{selectedBooking.customer_name}</p>
@@ -366,7 +368,7 @@ export default function BookingsPage() {
               </div>
 
               {selectedBooking.status === "confirmed" && (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     className="flex-1"
                     onClick={() =>

@@ -201,9 +201,9 @@ export default function SettingsPage() {
   const plan = PLANS[business.plan as PlanType];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl min-w-0 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Settings</h2>
         <p className="text-muted-foreground">
           Manage your business profile and branding
         </p>
@@ -248,7 +248,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setForm({ ...form, slug: e.target.value.toLowerCase() })
                 }
-                className="max-w-60"
+                className="w-full max-w-60"
               />
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                 setForm({ ...form, category: v as BusinessCategory })
               }
             >
-              <SelectTrigger className="max-w-60">
+              <SelectTrigger className="w-full max-w-60">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -324,7 +324,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSocialLinks({ ...socialLinks, facebook_url: e.target.value })
               }
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           </div>
           <div className="space-y-2">
@@ -335,18 +335,18 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSocialLinks({ ...socialLinks, instagram_url: e.target.value })
               }
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           </div>
           <div className="space-y-2">
-            <Label>Twitter / X</Label>
+            <Label>X</Label>
             <Input
-              placeholder="https://twitter.com/yourpage"
+              placeholder="https://x.com/yourpage"
               value={socialLinks.twitter_url}
               onChange={(e) =>
                 setSocialLinks({ ...socialLinks, twitter_url: e.target.value })
               }
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           </div>
           <div className="space-y-2">
@@ -357,7 +357,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSocialLinks({ ...socialLinks, linkedin_url: e.target.value })
               }
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           </div>
           <div className="space-y-2">
@@ -368,7 +368,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSocialLinks({ ...socialLinks, tiktok_url: e.target.value })
               }
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           </div>
         </CardContent>
@@ -384,17 +384,17 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Primary color</Label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <input
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-10 cursor-pointer rounded border"
+                className="h-10 w-10 min-h-[44px] min-w-[44px] cursor-pointer rounded border"
               />
               <Input
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-32"
+                className="h-10 w-full min-w-0 sm:w-32"
               />
             </div>
           </div>

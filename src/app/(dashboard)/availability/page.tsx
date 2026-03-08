@@ -254,9 +254,9 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl min-w-0 space-y-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Availability</h2>
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Availability</h2>
         <p className="text-sm text-muted-foreground">
           Set your working hours and block off dates
         </p>
@@ -276,7 +276,7 @@ export default function AvailabilityPage() {
               value={String(slotInterval)}
               onValueChange={(v) => setSlotInterval(parseInt(v))}
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -294,7 +294,7 @@ export default function AvailabilityPage() {
           <Separator />
           <div className="space-y-2">
             <Label>Max bookings per time slot</Label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <Input
                 type="number"
                 min={1}
@@ -305,7 +305,7 @@ export default function AvailabilityPage() {
                     Math.max(1, Math.min(100, parseInt(e.target.value) || 1))
                   )
                 }
-                className="w-24"
+                className="h-10 w-full max-w-24"
               />
               <span className="text-sm text-muted-foreground">
                 {maxBookingsPerSlot === 1
@@ -331,42 +331,45 @@ export default function AvailabilityPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {schedules.map((sched, i) => (
-            <div key={i} className="flex items-center gap-4">
-              <div className="w-24">
+            <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <div className="flex w-24 shrink-0 items-center">
                 <Label className="text-sm font-medium">
                   {DAYS_OF_WEEK[sched.day_of_week]}
                 </Label>
               </div>
-              <Switch
-                checked={sched.is_active}
-                onCheckedChange={(checked) =>
-                  updateSchedule(i, { is_active: checked })
-                }
-              />
-              {sched.is_active && (
-                <>
-                  <Input
-                    type="time"
-                    value={sched.start_time}
-                    onChange={(e) =>
-                      updateSchedule(i, { start_time: e.target.value })
-                    }
-                    className="w-32"
-                  />
-                  <span className="text-muted-foreground">to</span>
-                  <Input
-                    type="time"
-                    value={sched.end_time}
-                    onChange={(e) =>
-                      updateSchedule(i, { end_time: e.target.value })
-                    }
-                    className="w-32"
-                  />
-                </>
-              )}
-              {!sched.is_active && (
-                <span className="text-sm text-muted-foreground">Closed</span>
-              )}
+              <div className="flex items-center gap-4">
+                <Switch
+                  checked={sched.is_active}
+                  onCheckedChange={(checked) =>
+                    updateSchedule(i, { is_active: checked })
+                  }
+                  className="shrink-0"
+                />
+                {sched.is_active && (
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <Input
+                      type="time"
+                      value={sched.start_time}
+                      onChange={(e) =>
+                        updateSchedule(i, { start_time: e.target.value })
+                      }
+                      className="h-10 min-w-0 flex-1 basis-24 sm:w-32 sm:flex-initial"
+                    />
+                    <span className="shrink-0 text-muted-foreground">to</span>
+                    <Input
+                      type="time"
+                      value={sched.end_time}
+                      onChange={(e) =>
+                        updateSchedule(i, { end_time: e.target.value })
+                      }
+                      className="h-10 min-w-0 flex-1 basis-24 sm:w-32 sm:flex-initial"
+                    />
+                  </div>
+                )}
+                {!sched.is_active && (
+                  <span className="text-sm text-muted-foreground">Closed</span>
+                )}
+              </div>
             </div>
           ))}
         </CardContent>

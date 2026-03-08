@@ -149,16 +149,16 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-w-0 space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+          <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Analytics</h2>
           <p className="text-muted-foreground">
             Track your business performance
           </p>
         </div>
         <Select value={range} onValueChange={setRange}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -169,10 +169,10 @@ export default function AnalyticsPage() {
         </Select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium sm:text-sm">
               Total Bookings
             </CardTitle>
             <div className="rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{metrics.totalBookings}</p>
+            <p className="text-lg font-bold sm:text-2xl">{metrics.totalBookings}</p>
             <p className="text-xs text-muted-foreground">
               {metrics.confirmedBookings} confirmed
             </p>
@@ -188,13 +188,13 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <CardTitle className="text-xs font-medium sm:text-sm">Revenue</CardTitle>
             <div className="rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <CreditCard className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-lg font-bold sm:text-2xl">
               GHS {metrics.totalRevenue.toFixed(2)}
             </p>
             <p className="text-xs text-muted-foreground">Deposits collected</p>
@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium sm:text-sm">
               Conversion Rate
             </CardTitle>
             <div className="rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{metrics.conversionRate}%</p>
+            <p className="text-lg font-bold sm:text-2xl">{metrics.conversionRate}%</p>
             <p className="text-xs text-muted-foreground">
               Cancellation: {metrics.cancellationRate}%
             </p>
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium sm:text-sm">
               AI Conversations
             </CardTitle>
             <div className="rounded-lg bg-violet-100 p-2 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400">
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{metrics.aiChats}</p>
+            <p className="text-lg font-bold sm:text-2xl">{metrics.aiChats}</p>
             <p className="text-xs text-muted-foreground">
               {metrics.aiToBooking} led to booking
             </p>
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Bookings Trend</CardTitle>
@@ -245,7 +245,7 @@ export default function AnalyticsPage() {
                 bookings: { label: "Bookings", color: "var(--chart-1)" },
                 date: { label: "Date" },
               }}
-              className="h-64 w-full"
+              className="h-56 min-w-0 w-full sm:h-64"
             >
               <LineChart data={dailyData} margin={{ left: 12, right: 12 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -291,7 +291,7 @@ export default function AnalyticsPage() {
                 revenue: { label: "Revenue", color: "var(--chart-2)" },
                 date: { label: "Date" },
               }}
-              className="h-64 w-full"
+              className="h-56 min-w-0 w-full sm:h-64"
             >
               <LineChart data={dailyData} margin={{ left: 12, right: 12 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />

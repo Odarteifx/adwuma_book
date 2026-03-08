@@ -84,9 +84,9 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">
           Welcome back, {user.user_metadata?.full_name?.split(" ")[0] || "there"}
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -94,11 +94,11 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs font-medium sm:text-sm">
                 {stat.title}
               </CardTitle>
               <div className={`rounded-lg p-2 ${stat.iconClass}`}>
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-lg font-bold sm:text-2xl">{stat.value}</div>
               <CardDescription>{stat.description}</CardDescription>
             </CardContent>
           </Card>
