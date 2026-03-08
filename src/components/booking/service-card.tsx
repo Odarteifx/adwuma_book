@@ -73,6 +73,8 @@ interface ServiceCardBaseProps {
   selectedTime?: string;
   primaryColor?: string;
   onSelect?: (service: Service) => void;
+  onAddToCart?: (service: Service) => void;
+  isInCart?: boolean;
 }
 
 const DESCRIPTION_TRUNCATE_CHARS = 100;
@@ -142,6 +144,8 @@ export function ServiceCard({
   selectedTime,
   primaryColor,
   onSelect,
+  onAddToCart,
+  isInCart,
 }: ServiceCardBaseProps) {
   const deposit =
     service.deposit_type === "percentage"
@@ -184,7 +188,7 @@ export function ServiceCard({
             </p>
           </div>
         )}
-        <p className="font-medium">{service.name}</p>
+        <p className="font-semibold">{service.name}</p>
         <ServiceDescription
           description={service.description ?? ""}
           showExpand={variant === "summary"}
@@ -193,8 +197,8 @@ export function ServiceCard({
       </CardHeader>
       <CardContent className="space-y-2 border-t px-3 py-2 sm:px-4 sm:py-2.5">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">GHS {Number(service.price).toFixed(2)}</span>
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <span className="font-semibold">GHS {Number(service.price).toFixed(2)}</span>
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             {service.duration_minutes} min
           </span>
@@ -204,23 +208,46 @@ export function ServiceCard({
             {selectedDate} at {selectedTime} · Deposit GHS {deposit.toFixed(2)}
           </p>
         )}
-        {variant === "select" && onSelect && (
-          <Button
-            className="w-full transition-all duration-200 hover:opacity-90"
-            size="sm"
-            style={
-              primaryColor
-                ? {
-                    backgroundColor: primaryColor,
-                    color: "white",
-                    borderColor: primaryColor,
-                  }
-                : undefined
-            }
-            onClick={() => onSelect(service)}
-          >
-            Book now
-          </Button>
+        {variant === "select" && (onSelect || onAddToCart) && (
+          <div className="flex flex-col gap-2">
+            {onAddToCart && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full transition-all duration-200"
+                style={
+                  primaryColor
+                    ? {
+                        borderColor: primaryColor,
+                        color: primaryColor,
+                      }
+                    : undefined
+                }
+                onClick={() => onAddToCart(service)}
+                disabled={isInCart}
+              >
+                {isInCart ? "In cart" : "Add to cart"}
+              </Button>
+            )}
+            {onSelect && (
+              <Button
+                className="w-full transition-all duration-200 hover:opacity-90"
+                size="sm"
+                style={
+                  primaryColor
+                    ? {
+                        backgroundColor: primaryColor,
+                        color: "white",
+                        borderColor: primaryColor,
+                      }
+                    : undefined
+                }
+                onClick={() => onSelect(service)}
+              >
+                Book now
+              </Button>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

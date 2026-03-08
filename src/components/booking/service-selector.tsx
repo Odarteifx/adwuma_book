@@ -10,6 +10,8 @@ import { Search } from "lucide-react";
 interface Props {
   services: Service[];
   onSelect: (service: Service) => void;
+  onAddToCart?: (service: Service) => void;
+  isInCart?: (serviceId: string) => boolean;
   primaryColor?: string;
 }
 
@@ -23,7 +25,7 @@ function filterServices(services: Service[], query: string): Service[] {
   );
 }
 
-export function ServiceSelector({ services, onSelect, primaryColor }: Props) {
+export function ServiceSelector({ services, onSelect, onAddToCart, isInCart, primaryColor }: Props) {
   const [search, setSearch] = useState("");
   const filteredServices = useMemo(
     () => filterServices(services, search),
@@ -41,10 +43,10 @@ export function ServiceSelector({ services, onSelect, primaryColor }: Props) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="text-center sm:text-left">
+    <div className="animate-in fade-in duration-300 space-y-6">
+      <div className="space-y-1 text-center sm:text-left">
         <h2 className="text-lg font-semibold tracking-tight">Choose a service</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Select the service you&apos;d like to book
         </p>
       </div>
@@ -80,15 +82,22 @@ export function ServiceSelector({ services, onSelect, primaryColor }: Props) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredServices.map((service) => (
-            <ServiceCard
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {filteredServices.map((service, i) => (
+            <div
               key={service.id}
-              service={service}
-              variant="select"
-              primaryColor={primaryColor}
-              onSelect={onSelect}
-            />
+              className="animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-forwards"
+              style={{ "--tw-animation-delay": `${i * 50}ms` } as React.CSSProperties}
+            >
+              <ServiceCard
+                service={service}
+                variant="select"
+                primaryColor={primaryColor}
+                onSelect={onSelect}
+                onAddToCart={onAddToCart}
+                isInCart={isInCart?.(service.id)}
+              />
+            </div>
           ))}
         </div>
       )}

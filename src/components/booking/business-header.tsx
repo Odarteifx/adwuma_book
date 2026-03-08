@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Business } from "@/types";
+import type { Business, Service } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   MapPin,
@@ -12,6 +12,7 @@ import {
   Twitter,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CartDrawer } from "./cart-drawer";
 
 export type HeaderTab = "services" | "about" | "reviews";
 
@@ -22,6 +23,9 @@ interface Props {
   primaryColor?: string;
   activeTab?: HeaderTab;
   onTabChange?: (tab: HeaderTab) => void;
+  cart?: Service[];
+  onRemoveFromCart?: (serviceId: string) => void;
+  onProceedToCheckout?: () => void;
 }
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -43,6 +47,9 @@ export function BusinessHeader({
   primaryColor,
   activeTab: controlledTab,
   onTabChange,
+  cart = [],
+  onRemoveFromCart,
+  onProceedToCheckout,
 }: Props) {
   const [internalTab, setInternalTab] = useState<HeaderTab>("services");
 
@@ -79,7 +86,7 @@ export function BusinessHeader({
 
   return (
     <header
-      className="overflow-hidden border-b bg-card"
+      className="overflow-hidden bg-card"
       style={
         primaryColor
           ? ({ "--header-accent": primaryColor } as React.CSSProperties)
@@ -111,21 +118,21 @@ export function BusinessHeader({
         }
       />
 
-      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-4xl animate-in fade-in duration-500 px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
         {/* Logo + Info + Share */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
+          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
             {/* Logo - square with rounded corners, overlapping accent */}
             <div className="-mt-2 shrink-0">
               {business.logo_url ? (
                 <img
                   src={business.logo_url}
                   alt=""
-                  className="h-14 w-14 rounded-xl border-2 border-background object-cover shadow-md sm:h-16 sm:w-16"
+                  className="h-12 w-12 rounded-xl border-2 border-background object-cover shadow-md sm:h-16 sm:w-16"
                 />
               ) : (
                 <div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-background text-xl font-bold text-white shadow-md sm:h-16 sm:w-16"
+                  className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-background text-lg font-bold text-white shadow-md sm:h-16 sm:w-16"
                   style={
                     primaryColor
                       ? { backgroundColor: primaryColor }
@@ -137,18 +144,28 @@ export function BusinessHeader({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+              <h1 className="text-lg font-bold tracking-tight sm:text-2xl">
                 {business.name}
               </h1>
               {business.location && (
-                <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <a
+                  href={
+                    business.latitude != null && business.longitude != null
+                      ? `https://www.google.com/maps?q=${business.latitude},${business.longitude}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.location)}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="View location on Google Maps"
+                >
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   {business.location}
-                </p>
+                </a>
               )}
               {/* Tabs - right under location with spacing, above the line */}
               <nav
-                className="mt-5 flex flex-wrap gap-8"
+                className="mt-4 flex flex-wrap gap-6 sm:gap-8"
                 aria-label="Sections"
               >
                 <button
@@ -227,18 +244,28 @@ export function BusinessHeader({
             </div>
           </div>
 
-          {/* Share */}
+          {/* Cart + Share - full width on mobile, right-aligned on desktop */}
+          <div className="flex w-full flex-row flex-wrap items-center justify-between gap-3 border-t pt-4 sm:w-auto sm:flex-col sm:items-end sm:justify-start sm:border-t-0 sm:pt-0 sm:gap-4">
+          {cart.length > 0 && onRemoveFromCart && onProceedToCheckout && (
+            <CartDrawer
+              business={business}
+              cart={cart}
+              onRemove={onRemoveFromCart}
+              onProceed={onProceedToCheckout}
+              primaryColor={primaryColor}
+            />
+          )}
           {hasShare && (
-            <div className="flex flex-col gap-2 sm:items-end">
-              <span className="text-xs font-medium text-muted-foreground">
+            <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Share
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 <button
                   type="button"
                   onClick={handleCopyLink}
                   className={cn(
-                    "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    "min-h-[44px] min-w-[44px] rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                     primaryColor && "hover:text-[var(--header-accent)]"
                   )}
                   aria-label="Copy link"
@@ -251,7 +278,7 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
                     aria-label="WhatsApp"
@@ -265,10 +292,10 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
-                    aria-label="X (Twitter)"
+                    aria-label="X"
                   >
                     <Twitter className="h-4 w-4" />
                   </a>
@@ -279,7 +306,7 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
                     aria-label="Facebook"
@@ -293,7 +320,7 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
                     aria-label="LinkedIn"
@@ -307,7 +334,7 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
                     aria-label="Instagram"
@@ -321,7 +348,7 @@ export function BusinessHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:min-h-0 sm:min-w-0",
                       primaryColor && "hover:text-[var(--header-accent)]"
                     )}
                     aria-label="TikTok"
@@ -334,10 +361,11 @@ export function BusinessHeader({
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Line separator */}
-        <div className="mt-6 border-t" />
+        <div className="mt-3 border-t" />
       </div>
     </header>
   );
