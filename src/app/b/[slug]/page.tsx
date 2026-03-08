@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BookingCartProvider } from "@/context/booking-cart-context";
 import { BookingPageClient } from "@/components/booking/booking-page-client";
 import type { Business, Service } from "@/types";
 
@@ -53,10 +54,12 @@ export default async function BookingPage({ params }: Props) {
     .eq("business_id", business.id);
 
   return (
-    <BookingPageClient
-      business={business as Business}
-      services={(services as Service[]) || []}
-      reviewsCount={reviewsCount ?? 0}
-    />
+    <BookingCartProvider businessId={business.id}>
+      <BookingPageClient
+        business={business as Business}
+        services={(services as Service[]) || []}
+        reviewsCount={reviewsCount ?? 0}
+      />
+    </BookingCartProvider>
   );
 }

@@ -12,19 +12,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ServiceSummaryCard } from "./service-summary-card";
+import { ServicesSummaryCard } from "./service-summary-card";
 import { cn, formatTime } from "@/lib/utils";
 
 interface Props {
   business: Business;
-  service: Service;
+  services: Service[];
   onSelect: (date: string, slot: TimeSlot) => void;
   primaryColor?: string;
 }
 
-export function DateTimePicker({ business, service, onSelect, primaryColor }: Props) {
+export function DateTimePicker({ business, services, onSelect, primaryColor }: Props) {
   const businessId = business.id;
-  const serviceDuration = service.duration_minutes;
+  const serviceDuration = services.reduce((sum, s) => sum + s.duration_minutes, 0);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [month, setMonth] = useState<Date>(new Date());
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -100,18 +100,18 @@ export function DateTimePicker({ business, service, onSelect, primaryColor }: Pr
     slots.length > 0 && slots.every((s) => !s.available);
 
   return (
-    <Card className="overflow-hidden border shadow-sm">
-      <CardHeader className="space-y-1.5 px-6 pb-6 pt-6 sm:px-8 sm:pt-8">
+    <Card className="overflow-hidden rounded-xl border shadow-sm">
+      <CardHeader className="space-y-2 px-4 pb-4 pt-5 sm:px-8 sm:pb-6 sm:pt-8">
         <CardTitle className="text-lg font-semibold tracking-tight">Pick date & time</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           Select your preferred date and time slot
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-stretch">
+      <CardContent className="px-4 pb-5 sm:px-8 sm:pb-8 pt-0">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 md:items-stretch">
           {/* Row 1: Card and calendar same height */}
           <div className="order-2 min-w-0 md:order-1">
-            <ServiceSummaryCard business={business} service={service} />
+            <ServicesSummaryCard business={business} services={services} />
           </div>
           <div className="order-1 flex min-w-0 flex-col md:order-2">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -186,12 +186,12 @@ export function DateTimePicker({ business, service, onSelect, primaryColor }: Pr
 
           {/* Row 2: Time picker underneath */}
           {date && (
-            <div className="border-t pt-6 md:col-span-2 md:pt-8">
+            <div className="border-t pt-5 md:col-span-2 md:pt-8">
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Time
               </p>
               {loadingSlots ? (
-                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Skeleton key={i} className="h-9 w-full rounded-md" />
                   ))}
@@ -205,7 +205,7 @@ export function DateTimePicker({ business, service, onSelect, primaryColor }: Pr
                   Fully booked. Please pick another date.
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
                   {slots.map((slot) => (
                     <Button
                       key={slot.time}
@@ -213,7 +213,7 @@ export function DateTimePicker({ business, service, onSelect, primaryColor }: Pr
                       size="sm"
                       disabled={!slot.available}
                       className={cn(
-                        "min-h-9",
+                        "min-h-[44px] sm:min-h-9",
                         "bg-background text-sm font-normal",
                         !slot.available && "opacity-40 line-through"
                       )}

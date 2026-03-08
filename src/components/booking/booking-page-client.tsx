@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Business, Service, TimeSlot } from "@/types";
+import { useBookingCart } from "@/context/booking-cart-context";
 import { ServiceSelector } from "./service-selector";
 import { DateTimePicker } from "./date-time-picker";
 import { CustomerForm } from "./customer-form";
@@ -22,16 +23,28 @@ interface Props {
 }
 
 export function BookingPageClient({ business, services, reviewsCount = 0 }: Props) {
+  const { cart, addToCart, removeFromCart, clearCart, isInCart } = useBookingCart();
   const [step, setStep] = useState<Step>("services");
   const [headerTab, setHeaderTab] = useState<HeaderTab>("services");
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
   const primaryColor = business.primary_color || undefined;
 
+  function handleBookNow(service: Service) {
+    clearCart();
+    addToCart(service);
+    setStep("datetime");
+  }
+
+  function handleProceedToCheckout() {
+    if (cart.length > 0) setStep("datetime");
+  }
+
+  const servicesToBook = cart;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background">
       <BusinessHeader
         business={business}
         servicesCount={services.length}
@@ -39,9 +52,12 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
         primaryColor={primaryColor}
         activeTab={headerTab}
         onTabChange={setHeaderTab}
+        cart={cart}
+        onRemoveFromCart={removeFromCart}
+        onProceedToCheckout={handleProceedToCheckout}
       />
 
-      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+      <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10">
         {/* Reviews tab content */}
         {headerTab === "reviews" && (
           <ReviewsSection businessId={business.id} primaryColor={primaryColor} />
@@ -49,9 +65,9 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
 
         {/* About tab content */}
         {headerTab === "about" && (
-          <div className="rounded-lg border bg-card p-6">
+          <div className="animate-in fade-in duration-300 rounded-xl border bg-card p-5 sm:p-8">
             <h2 className="text-lg font-semibold">About</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
               {business.description || "No description available."}
             </p>
           </div>
@@ -62,7 +78,7 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
         <>
         {/* Step indicator & back - only from date screen onward */}
         {step !== "services" && (
-          <div className="mb-8 flex flex-wrap items-center gap-4">
+          <div className="animate-in fade-in duration-200 mb-6 flex flex-wrap items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
@@ -98,17 +114,17 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
           <ServiceSelector
             services={services}
             primaryColor={primaryColor}
-            onSelect={(service) => {
-              setSelectedService(service);
-              setStep("datetime");
-            }}
+            onSelect={handleBookNow}
+            onAddToCart={addToCart}
+            isInCart={isInCart}
           />
         )}
 
-        {step === "datetime" && selectedService && (
+        {step === "datetime" && servicesToBook.length > 0 && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <DateTimePicker
             business={business}
-            service={selectedService}
+            services={servicesToBook}
             primaryColor={primaryColor}
             onSelect={(date, slot) => {
               setSelectedDate(date);
@@ -116,19 +132,22 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
               setStep("details");
             }}
           />
+          </div>
         )}
 
         {step === "details" &&
-          selectedService &&
+          servicesToBook.length > 0 &&
           selectedDate &&
           selectedSlot && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <CustomerForm
               business={business}
-              service={selectedService}
+              services={servicesToBook}
               date={selectedDate}
               slot={selectedSlot}
               primaryColor={primaryColor}
             />
+            </div>
           )}
         </>
         )}
