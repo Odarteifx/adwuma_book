@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Idempotency: check if payment already processed
     const { data: payment } = await supabase
       .from("payments")
-      .select("id, booking_id, business_id, amount, status")
+      .select("id, booking_id, business_id, amount, status, metadata")
       .eq("paystack_reference", reference)
       .single();
 
@@ -74,18 +74,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
     }
 
-    // Confirm booking via RPC (slot locking)
-    const { data: confirmed } = await supabase.rpc(
-      "confirm_booking_if_available",
-      { p_booking_id: payment.booking_id }
-    );
+    // Confirm booking(s) via RPC (slot locking)
+    const bookingIdsToConfirm =
+      (payment.metadata as { booking_ids?: string[] })?.booking_ids ?? [
+        payment.booking_id,
+      ];
 
-    if (!confirmed) {
+    let allConfirmed = true;
+    for (const bid of bookingIdsToConfirm) {
+      const { data: confirmed } = await supabase.rpc(
+        "confirm_booking_if_available",
+        { p_booking_id: bid }
+      );
+      if (!confirmed) {
+        allConfirmed = false;
+        break;
+      }
+    }
+
+    if (!allConfirmed) {
       await supabase
         .from("payments")
         .update({ status: "failed" })
         .eq("id", payment.id);
-      // TODO: initiate refund via Paystack
       console.error("Slot no longer available, booking could not be confirmed");
       return NextResponse.json(
         { error: "Slot no longer available" },
@@ -102,24 +113,32 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", payment.id);
 
+    const bookingIdsForAnalytics =
+      (payment.metadata as { booking_ids?: string[] })?.booking_ids ?? [
+        payment.booking_id,
+      ];
+
     // Log analytics
     await supabase.from("analytics_events").insert({
       business_id: payment.business_id,
       event_type: "deposit_paid",
       metadata: {
         booking_id: payment.booking_id,
+        booking_ids: bookingIdsForAnalytics,
         amount: payment.amount,
         reference,
       },
     });
 
-    await supabase.from("analytics_events").insert({
-      business_id: payment.business_id,
-      event_type: "booking_confirmed",
-      metadata: { booking_id: payment.booking_id },
-    });
+    for (const bid of bookingIdsForAnalytics) {
+      await supabase.from("analytics_events").insert({
+        business_id: payment.business_id,
+        event_type: "booking_confirmed",
+        metadata: { booking_id: bid },
+      });
+    }
 
-    // Send WhatsApp notification to vendor
+    // Send WhatsApp notification to vendor (use first booking for details)
     const { data: booking } = await supabase
       .from("bookings")
       .select("*, services(name)")
@@ -133,10 +152,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (booking && business) {
+      const serviceNames =
+        bookingIdsForAnalytics.length > 1
+          ? `${bookingIdsForAnalytics.length} services`
+          : booking.services?.name || "Service";
+
       await sendBookingConfirmation({
         recipientPhone: business.whatsapp_number,
         customerName: booking.customer_name,
-        serviceName: booking.services?.name || "Service",
+        serviceName: serviceNames,
         date: booking.booking_date,
         time: booking.start_time,
         depositAmount: Number(payment.amount).toFixed(2),
