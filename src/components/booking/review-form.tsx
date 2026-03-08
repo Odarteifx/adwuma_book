@@ -101,7 +101,7 @@ export function ReviewForm({
       </div>
       <div>
         <label htmlFor="review-comment" className="mb-2 block text-sm font-medium">
-          Comment (optional)
+          Comment <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <Textarea
           id="review-comment"
