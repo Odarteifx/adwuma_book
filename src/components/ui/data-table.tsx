@@ -24,6 +24,7 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number;
   mobileCard?: (row: TData) => React.ReactNode;
   rowClassName?: (row: TData) => string | undefined;
+  className?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -32,6 +33,7 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   mobileCard,
   rowClassName,
+  className,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -44,10 +46,10 @@ export function DataTable<TData, TValue>({
   const rows = table.getRowModel().rows;
 
   return (
-    <div>
+    <div className={className}>
       {/* Desktop table */}
       <div className={mobileCard ? "hidden md:block" : ""}>
-        <div className="rounded-md border">
+        <div className="overflow-hidden rounded-lg border border-border/60">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -96,7 +98,7 @@ export function DataTable<TData, TValue>({
 
       {/* Mobile list */}
       {mobileCard && (
-        <div className="rounded-md border md:hidden">
+        <div className="rounded-lg border border-border/60 md:hidden">
           {rows.length ? (
             rows.map((row, i) => (
               <div

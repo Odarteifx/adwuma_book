@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/hooks/use-business";
 import type { Booking } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Dialog,
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { BookingsSkeleton } from "@/components/dashboard/skeletons";
@@ -40,7 +38,6 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [firstTimePhones, setFirstTimePhones] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!business) return;
@@ -56,18 +53,7 @@ export default function BookingsPage() {
         .order("start_time", { ascending: false });
 
       if (cancelled) return;
-      const all = (data as BookingRow[]) || [];
-      setBookings(all);
-
-      const phoneCounts = new Map<string, number>();
-      for (const b of all) {
-        phoneCounts.set(b.customer_phone, (phoneCounts.get(b.customer_phone) || 0) + 1);
-      }
-      const newPhones = new Set<string>();
-      for (const [phone, count] of phoneCounts) {
-        if (count === 1) newPhones.add(phone);
-      }
-      setFirstTimePhones(newPhones);
+      setBookings((data as BookingRow[]) || []);
       setLoading(false);
     }
     load();
@@ -138,42 +124,16 @@ export default function BookingsPage() {
     return list;
   }, [bookings, tab, search]);
 
-  const counts = useMemo(() => {
-    const today = todayStr();
-    return {
-      all: bookings.length,
-      active: bookings.filter(
-        (b) =>
-          b.booking_date === today &&
-          (b.status === "confirmed" || b.status === "pending_deposit")
-      ).length,
-      upcoming: bookings.filter(
-        (b) =>
-          b.booking_date > today &&
-          (b.status === "confirmed" || b.status === "pending_deposit")
-      ).length,
-      completed: bookings.filter((b) => b.status === "completed").length,
-      cancelled: bookings.filter(
-        (b) =>
-          b.status === "cancelled" ||
-          b.status === "expired" ||
-          b.status === "no_show"
-      ).length,
-    };
-  }, [bookings]);
-
-  const isNewClient = (phone: string) => firstTimePhones.has(phone);
-
   const columns: ColumnDef<BookingRow>[] = useMemo(
     () => [
       {
         accessorKey: "customer_name",
-        header: "Customer",
+        header: () => <span className="text-muted-foreground font-normal">Customer</span>,
         cell: ({ row }) => {
           const b = row.original;
           return (
             <div>
-              <p className="font-medium">{b.customer_name}</p>
+              <p className="text-sm font-medium">{b.customer_name}</p>
               <p className="text-xs text-muted-foreground">{b.customer_phone}</p>
             </div>
           );
@@ -181,34 +141,41 @@ export default function BookingsPage() {
       },
       {
         accessorKey: "services",
-        header: "Service",
-        cell: ({ row }) => row.original.services?.name ?? "—",
+        header: () => <span className="text-muted-foreground font-normal">Service</span>,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.services?.name ?? "—"}
+          </span>
+        ),
       },
       {
         accessorKey: "booking_date",
-        header: "Date & Time",
+        header: () => <span className="text-muted-foreground font-normal">When</span>,
         cell: ({ row }) => {
           const b = row.original;
           return (
-            <div>
-              <p className="text-sm">{formatDate(b.booking_date)}</p>
-              <p className="text-xs text-muted-foreground">
-                {formatTime(b.start_time)} — {formatTime(b.end_time)}
-              </p>
+            <div className="text-sm">
+              <span>{formatDate(b.booking_date)}</span>
+              <span className="text-muted-foreground">
+                {" · "}{formatTime(b.start_time)}
+              </span>
             </div>
           );
         },
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: () => <span className="text-muted-foreground font-normal">Status</span>,
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
         accessorKey: "deposit_amount",
-        header: "Deposit",
-        cell: ({ row }) =>
-          `GHS ${Number(row.original.deposit_amount).toFixed(2)}`,
+        header: () => <span className="text-muted-foreground font-normal">Deposit</span>,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            GHS {Number(row.original.deposit_amount).toFixed(2)}
+          </span>
+        ),
       },
       {
         id: "actions",
@@ -227,83 +194,65 @@ export default function BookingsPage() {
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [firstTimePhones]
+    []
   );
 
   if (!business) return <BookingsSkeleton />;
 
-  function tabLabel(label: string, count: number) {
-    return (
-      <span className="flex items-center gap-1.5">
-        {label}
-        {count > 0 && (
-          <Badge
-            variant="secondary"
-            className="h-5 min-w-[20px] justify-center px-1.5 text-[10px]"
-          >
-            {count}
-          </Badge>
-        )}
-      </span>
-    );
-  }
-
   return (
-    <div className="min-w-0 space-y-6">
-      <div>
-        <h2 className="text-lg font-bold tracking-tight sm:text-2xl">Bookings</h2>
-        <p className="text-muted-foreground">Manage your appointments</p>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="min-w-0 overflow-x-auto sm:overflow-visible">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
-          <TabsList className="inline-flex w-max min-w-0">
-            <TabsTrigger value="all">{tabLabel("All", counts.all)}</TabsTrigger>
-            <TabsTrigger value="active">{tabLabel("Active", counts.active)}</TabsTrigger>
-            <TabsTrigger value="upcoming">{tabLabel("Upcoming", counts.upcoming)}</TabsTrigger>
-            <TabsTrigger value="completed">{tabLabel("Done", counts.completed)}</TabsTrigger>
-            <TabsTrigger value="cancelled">{tabLabel("Cancelled", counts.cancelled)}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="min-w-0 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium sm:text-lg">Bookings</h2>
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
+            <TabsList className="h-9 shrink-0 bg-muted/50">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                All
+              </TabsTrigger>
+              <TabsTrigger value="active" className="text-xs sm:text-sm">
+                Today
+              </TabsTrigger>
+              <TabsTrigger value="upcoming" className="text-xs sm:text-sm">
+                Upcoming
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm">
+                Done
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="text-xs sm:text-sm">
+                Cancelled
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-24 sm:w-32 text-sm"
+          />
         </div>
-        <Input
-          placeholder="Search by name or phone..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full min-w-0 sm:w-48"
-        />
       </div>
 
       {loading ? (
         <BookingsSkeleton />
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {tab === "all"
-              ? "No bookings found"
-              : tab === "active"
-                ? "No bookings for today"
-                : tab === "upcoming"
-                  ? "No upcoming bookings"
-                  : tab === "completed"
-                    ? "No completed bookings yet"
-                    : "No cancelled bookings"}
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
+          {tab === "all"
+            ? "No bookings"
+            : tab === "active"
+              ? "Nothing today"
+              : tab === "upcoming"
+                ? "No upcoming"
+                : tab === "completed"
+                  ? "None completed"
+                  : "None cancelled"}
+        </div>
       ) : (
         <DataTable
           columns={columns}
           data={filtered}
-          rowClassName={(booking) =>
-            isNewClient(booking.customer_phone)
-              ? "bg-emerald-50/60 dark:bg-emerald-950/10"
-              : undefined
-          }
           mobileCard={(booking) => (
             <div
-              className="cursor-pointer active:bg-muted/40"
+              className="cursor-pointer active:bg-muted/30"
               onClick={() => {
                 setSelectedBooking(booking);
                 setDetailOpen(true);
@@ -313,79 +262,75 @@ export default function BookingsPage() {
                 <p className="truncate text-sm font-medium">{booking.customer_name}</p>
                 <StatusBadge status={booking.status} />
               </div>
-              <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>{booking.services?.name} · {formatTime(booking.start_time)}</span>
-                <span>{formatDate(booking.booking_date)}</span>
-              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {booking.services?.name} · {formatDate(booking.booking_date)} {formatTime(booking.start_time)}
+              </p>
             </div>
           )}
         />
       )}
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base">Booking</DialogTitle>
           </DialogHeader>
           {selectedBooking && (
-            <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+            <div className="space-y-4">
+              <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Customer</p>
+                  <p className="text-muted-foreground text-xs">Customer</p>
                   <p className="font-medium">{selectedBooking.customer_name}</p>
+                  <p className="text-muted-foreground">{selectedBooking.customer_phone}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedBooking.customer_phone}</p>
+                <div className="flex gap-4">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Date</p>
+                    <p className="font-medium">{formatDate(selectedBooking.booking_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Time</p>
+                    <p className="font-medium">
+                      {formatTime(selectedBooking.start_time)} — {formatTime(selectedBooking.end_time)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">{formatDate(selectedBooking.booking_date)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Time</p>
-                  <p className="font-medium">
-                    {formatTime(selectedBooking.start_time)} —{" "}
-                    {formatTime(selectedBooking.end_time)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Status</span>
                   <StatusBadge status={selectedBooking.status} />
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Deposit</p>
-                  <p className="font-medium">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Deposit</span>
+                  <span className="font-medium">
                     GHS {Number(selectedBooking.deposit_amount).toFixed(2)}
-                  </p>
+                  </span>
                 </div>
                 {selectedBooking.notes && (
-                  <div className="col-span-2">
-                    <p className="text-muted-foreground">Notes</p>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Notes</p>
                     <p className="font-medium">{selectedBooking.notes}</p>
                   </div>
                 )}
               </div>
 
               {selectedBooking.status === "confirmed" && (
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex gap-2 pt-2">
                   <Button
+                    size="sm"
+                    variant="outline"
                     className="flex-1"
-                    onClick={() =>
-                      updateStatus(selectedBooking.id, "completed")
-                    }
+                    onClick={() => updateStatus(selectedBooking.id, "completed")}
                   >
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
                     Complete
                   </Button>
                   <Button
-                    variant="destructive"
-                    className="flex-1"
-                    onClick={() =>
-                      updateStatus(selectedBooking.id, "cancelled")
-                    }
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => updateStatus(selectedBooking.id, "cancelled")}
                   >
-                    <XCircle className="mr-2 h-4 w-4" />
+                    <XCircle className="mr-1.5 h-3.5 w-3.5" />
                     Cancel
                   </Button>
                 </div>
