@@ -256,7 +256,7 @@ export function BusinessHeader({
             />
           )}
           {hasShare && (
-            <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
+            <div className="hidden flex-row flex-wrap items-center gap-3 sm:flex sm:gap-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Share
               </span>
