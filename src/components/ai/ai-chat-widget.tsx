@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, X, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -81,7 +80,7 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-4 right-4 z-50 flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
           style={{ backgroundColor: primaryColor || undefined }}
           aria-label="Open AI chat"
         >
@@ -90,9 +89,9 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
       )}
 
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[480px] w-[360px] flex-col rounded-2xl border bg-card shadow-2xl">
+        <div className="fixed bottom-4 left-4 right-4 z-50 flex max-h-[calc(100dvh-3rem)] min-h-[320px] flex-col rounded-2xl border bg-card shadow-2xl sm:bottom-6 sm:left-auto sm:right-6 sm:max-h-[480px] sm:min-h-0 sm:h-[480px] sm:w-[360px]">
           <div
-            className="flex items-center justify-between rounded-t-2xl px-4 py-3 text-white"
+            className="flex shrink-0 items-center justify-between rounded-t-2xl px-4 py-3 text-white"
             style={{ backgroundColor: primaryColor || undefined }}
           >
             <div className="flex items-center gap-2">
@@ -102,20 +101,23 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-white hover:bg-white/20"
+              className="h-10 w-10 min-h-[44px] min-w-[44px] text-white hover:bg-white/20 sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0"
               onClick={() => setOpen(false)}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4"
+          >
             <div className="space-y-3">
               {messages.map((msg, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
+                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm break-words",
                     msg.role === "user"
                       ? "ml-auto text-white"
                       : "bg-muted"
@@ -136,9 +138,9 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
-          <div className="border-t p-3">
+          <div className="shrink-0 border-t p-3">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -150,14 +152,14 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about services, prices..."
-                className="flex-1"
+                className="min-h-[44px] flex-1 text-base sm:min-h-0 sm:text-sm"
                 disabled={loading}
               />
               <Button
                 type="submit"
                 size="icon"
                 disabled={loading || !input.trim()}
-                className="text-white"
+                className="h-11 w-11 shrink-0 text-white sm:h-9 sm:w-9"
                 style={{ backgroundColor: primaryColor || undefined }}
               >
                 <Send className="h-4 w-4" />
