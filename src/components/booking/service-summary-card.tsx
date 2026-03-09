@@ -2,7 +2,6 @@
 
 import type { Business, Service } from "@/types";
 import { ServiceCard } from "./service-card";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
 interface ServiceSummaryCardProps {
@@ -60,8 +59,8 @@ export function ServicesSummaryCard({
   const totalDuration = services.reduce((sum, s) => sum + s.duration_minutes, 0);
 
   return (
-    <Card className="h-full overflow-hidden border shadow-sm">
-      <CardHeader className="space-y-0.5 px-3 py-2.5 sm:px-4 sm:py-3">
+    <div className="h-full overflow-hidden rounded-lg border border-border/60">
+      <div className="space-y-0.5 px-3 py-2.5 sm:px-4 sm:py-3">
         {business.logo_url && (
           <div className="flex items-center gap-2">
             <img
@@ -72,9 +71,9 @@ export function ServicesSummaryCard({
             <p className="text-xs font-medium text-muted-foreground">{business.name}</p>
           </div>
         )}
-        <p className="font-semibold">{services.length} services</p>
-      </CardHeader>
-      <CardContent className="space-y-2 border-t px-3 py-2 sm:px-4 sm:py-2.5">
+        <p className="text-sm font-medium">{services.length} services</p>
+      </div>
+      <div className="space-y-2 border-t border-border/60 px-3 py-2 sm:px-4 sm:py-2.5">
         <ul className="space-y-1.5 text-sm">
           {services.map((s) => (
             <li key={s.id} className="flex justify-between gap-2">
@@ -95,7 +94,7 @@ export function ServicesSummaryCard({
             {selectedDate} at {selectedTime}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

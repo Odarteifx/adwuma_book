@@ -41,11 +41,11 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
 
   if (loading) {
     return (
-      <div className="animate-in fade-in duration-300 space-y-4">
-        <h2 className="text-lg font-semibold">Reviews</h2>
-        <div className="space-y-3">
+      <div className="space-y-3">
+        <h2 className="text-base font-medium">Reviews</h2>
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
           ))}
         </div>
       </div>
@@ -60,52 +60,35 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
       : 0;
 
   return (
-    <div className="animate-in fade-in duration-300 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">Reviews</h2>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium">Reviews</h2>
         {reviews.length > 0 && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={cn(
-                    "h-4 w-4",
-                    star <= averageRating
-                      ? "fill-amber-400 text-amber-400"
-                      : "text-muted-foreground/30"
-                  )}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {averageRating} ({reviews.length} review{reviews.length !== 1 ? "s" : ""})
-            </span>
-          </div>
+          <span className="text-xs text-muted-foreground">
+            {averageRating} · {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+          </span>
         )}
       </div>
 
       {reviews.length === 0 ? (
-        <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            No reviews yet. Be the first to share your experience!
-          </p>
+        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+          No reviews yet
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="rounded-lg border bg-card p-4"
+              className="rounded-lg border border-border/60 p-3"
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-wrap gap-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={cn(
-                          "h-3.5 w-3.5",
+                          "h-3 w-3",
                           star <= review.rating
                             ? "fill-amber-400 text-amber-400"
                             : "text-muted-foreground/30"
@@ -113,14 +96,14 @@ export function ReviewsSection({ businessId, primaryColor }: Props) {
                       />
                     ))}
                   </div>
-                  <span className="text-sm font-semibold">{review.customer_name}</span>
+                  <span className="text-sm font-medium">{review.customer_name}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {formatReviewDate(review.created_at)}
                 </span>
               </div>
               {review.comment && (
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-1.5 text-xs text-muted-foreground">
                   {review.comment}
                 </p>
               )}

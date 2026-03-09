@@ -18,14 +18,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ServicesSummaryCard } from "./service-summary-card";
 import { toast } from "sonner";
 import { Loader2, Lock } from "lucide-react";
@@ -116,15 +108,12 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
   }
 
   return (
-    <Card className="overflow-hidden rounded-xl border shadow-sm">
-      <CardHeader className="space-y-2 px-4 pb-4 pt-5 sm:px-8 sm:pb-6 sm:pt-8">
-        <CardTitle className="text-lg font-semibold tracking-tight">Your details</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Enter your information to complete the booking
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 pb-5 sm:px-8 sm:pb-8 pt-0">
-        <div className="grid min-h-0 gap-6 md:grid-cols-[minmax(200px,1fr)_minmax(0,1.5fr)] md:gap-8 md:items-stretch">
+    <div className="overflow-hidden rounded-lg border border-border/60">
+      <div className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
+        <h3 className="text-base font-medium">Your details</h3>
+      </div>
+      <div className="px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
+        <div className="grid min-h-0 gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,1.5fr)] md:gap-6 md:items-stretch">
           <div className="order-2 min-w-0 md:order-1 md:min-h-0">
             <ServicesSummaryCard
               business={business}
@@ -136,19 +125,19 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="flex min-w-0 flex-col space-y-6 lg:min-h-0 lg:overflow-auto"
+              className="flex min-w-0 flex-col space-y-4 lg:min-h-0 lg:overflow-auto"
             >
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="customer_name"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-sm font-medium">Full name</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm text-muted-foreground">Name</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Kwame Asante"
-                          className="h-11"
+                          className="h-9"
                           {...field}
                         />
                       </FormControl>
@@ -160,12 +149,12 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                   control={form.control}
                   name="customer_phone"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-sm font-medium">Phone number</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm text-muted-foreground">Phone</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="+233241234567"
-                          className="h-11"
+                          className="h-9"
                           {...field}
                         />
                       </FormControl>
@@ -177,13 +166,13 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                   control={form.control}
                   name="customer_email"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-sm font-medium">Email (optional)</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm text-muted-foreground">Email (optional)</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="you@example.com"
-                          className="h-11"
+                          className="h-9"
                           {...field}
                           value={field.value ?? ""}
                         />
@@ -196,13 +185,13 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                   control={form.control}
                   name="notes"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-sm font-medium">Notes (optional)</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm text-muted-foreground">Notes (optional)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Any special requests..."
-                          rows={3}
-                          className="min-h-[80px] resize-none"
+                          placeholder="Special requests..."
+                          rows={2}
+                          className="min-h-[60px] resize-none text-sm"
                           {...field}
                           value={field.value ?? ""}
                         />
@@ -213,18 +202,16 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                 />
               </div>
 
-              <Separator className="my-2" />
-
-              <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3.5">
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5 text-sm">
+                <span className="text-muted-foreground">
                   Deposit · {RESERVATION_EXPIRY_MINUTES} min to pay
                 </span>
-                <span className="text-sm font-bold">GHS {totalDeposit.toFixed(2)}</span>
+                <span className="font-medium">GHS {totalDeposit.toFixed(2)}</span>
               </div>
 
               <Button
                 type="submit"
-                className="h-12 w-full min-h-[48px]"
+                className="h-10 w-full"
                 disabled={form.formState.isSubmitting}
                 style={
                   primaryColor
@@ -237,16 +224,16 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                 }
               >
                 {form.formState.isSubmitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Lock className="mr-2 h-4 w-4" />
+                  <Lock className="mr-1.5 h-3.5 w-3.5" />
                 )}
-                Pay Deposit & Confirm
+                Pay & confirm
               </Button>
             </form>
           </Form>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
