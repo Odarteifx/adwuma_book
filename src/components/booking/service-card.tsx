@@ -73,8 +73,6 @@ interface ServiceCardBaseProps {
   selectedTime?: string;
   primaryColor?: string;
   onSelect?: (service: Service) => void;
-  onAddToCart?: (service: Service) => void;
-  isInCart?: boolean;
 }
 
 const DESCRIPTION_TRUNCATE_CHARS = 100;
@@ -144,8 +142,6 @@ export function ServiceCard({
   selectedTime,
   primaryColor,
   onSelect,
-  onAddToCart,
-  isInCart,
 }: ServiceCardBaseProps) {
   const deposit =
     service.deposit_type === "percentage"
@@ -155,12 +151,9 @@ export function ServiceCard({
   return (
     <Card
       className={cn(
-        "flex flex-col gap-0 overflow-hidden border shadow-sm p-0 transition-all duration-200",
-        variant === "select" &&
-          "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
-        variant === "select" &&
-          primaryColor &&
-          "[&:hover]:border-[var(--card-accent)]",
+        "flex flex-col gap-0 overflow-hidden border border-border/60 p-0 transition-colors",
+        variant === "select" && "cursor-pointer hover:border-border",
+        variant === "select" && primaryColor && "[&:hover]:border-[var(--card-accent)]",
         variant === "summary" && "h-full"
       )}
       style={
@@ -173,7 +166,7 @@ export function ServiceCard({
         service={service}
         className="aspect-[4/3] w-full shrink-0"
       />
-      <CardHeader className="flex-1 space-y-0.5 px-3 py-2 sm:px-4 sm:py-2.5">
+      <CardHeader className="flex-1 space-y-0.5 px-3 py-2 sm:px-3 sm:py-2.5">
         {variant === "summary" && business && (
           <div className="flex items-center gap-2">
             {business.logo_url && (
@@ -188,18 +181,18 @@ export function ServiceCard({
             </p>
           </div>
         )}
-        <p className="font-semibold">{service.name}</p>
+        <p className="text-sm font-medium sm:text-base">{service.name}</p>
         <ServiceDescription
           description={service.description ?? ""}
           showExpand={variant === "summary"}
           primaryColor={primaryColor}
         />
       </CardHeader>
-      <CardContent className="space-y-2 border-t px-3 py-2 sm:px-4 sm:py-2.5">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-semibold">GHS {Number(service.price).toFixed(2)}</span>
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
+      <CardContent className="space-y-2 border-t border-border/60 px-3 py-2 sm:px-3 sm:py-2.5">
+        <div className="flex items-center justify-between text-xs sm:text-sm">
+          <span className="font-medium">GHS {Number(service.price).toFixed(2)}</span>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="h-3 w-3" />
             {service.duration_minutes} min
           </span>
         </div>
@@ -208,46 +201,23 @@ export function ServiceCard({
             {selectedDate} at {selectedTime} · Deposit GHS {deposit.toFixed(2)}
           </p>
         )}
-        {variant === "select" && (onSelect || onAddToCart) && (
-          <div className="flex flex-col gap-2">
-            {onAddToCart && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full transition-all duration-200"
-                style={
-                  primaryColor
-                    ? {
-                        borderColor: primaryColor,
-                        color: primaryColor,
-                      }
-                    : undefined
-                }
-                onClick={() => onAddToCart(service)}
-                disabled={isInCart}
-              >
-                {isInCart ? "In cart" : "Add to cart"}
-              </Button>
-            )}
-            {onSelect && (
-              <Button
-                className="w-full transition-all duration-200 hover:opacity-90"
-                size="sm"
-                style={
-                  primaryColor
-                    ? {
-                        backgroundColor: primaryColor,
-                        color: "white",
-                        borderColor: primaryColor,
-                      }
-                    : undefined
-                }
-                onClick={() => onSelect(service)}
-              >
-                Book now
-              </Button>
-            )}
-          </div>
+        {variant === "select" && onSelect && (
+          <Button
+            className="h-9 w-full text-sm"
+            size="sm"
+            style={
+              primaryColor
+                ? {
+                    backgroundColor: primaryColor,
+                    color: "white",
+                    borderColor: primaryColor,
+                  }
+                : undefined
+            }
+            onClick={() => onSelect(service)}
+          >
+            Book now
+          </Button>
         )}
       </CardContent>
     </Card>

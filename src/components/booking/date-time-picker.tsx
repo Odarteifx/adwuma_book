@@ -5,24 +5,26 @@ import type { Business, Service, TimeSlot } from "@/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ServicesSummaryCard } from "./service-summary-card";
 import { cn, formatTime } from "@/lib/utils";
 
 interface Props {
   business: Business;
   services: Service[];
+  selectedService?: Service | null;
+  onAddToCart?: () => void;
   onSelect: (date: string, slot: TimeSlot) => void;
   primaryColor?: string;
 }
 
-export function DateTimePicker({ business, services, onSelect, primaryColor }: Props) {
+export function DateTimePicker({
+  business,
+  services,
+  selectedService,
+  onAddToCart,
+  onSelect,
+  primaryColor,
+}: Props) {
   const businessId = business.id;
   const serviceDuration = services.reduce((sum, s) => sum + s.duration_minutes, 0);
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -94,29 +96,25 @@ export function DateTimePicker({ business, services, onSelect, primaryColor }: P
     fetchSlots();
   }, [date, businessId, serviceDuration]);
 
+  const [pickedSlot, setPickedSlot] = useState<TimeSlot | null>(null);
   const dateStr = date ? date.toISOString().split("T")[0] : "";
 
   const allSlotsUnavailable =
     slots.length > 0 && slots.every((s) => !s.available);
 
   return (
-    <Card className="overflow-hidden rounded-xl border shadow-sm">
-      <CardHeader className="space-y-2 px-4 pb-4 pt-5 sm:px-8 sm:pb-6 sm:pt-8">
-        <CardTitle className="text-lg font-semibold tracking-tight">Pick date & time</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Select your preferred date and time slot
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 pb-5 sm:px-8 sm:pb-8 pt-0">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 md:items-stretch">
+    <div className="overflow-hidden rounded-lg border border-border/60">
+      <div className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
+        <h3 className="text-base font-medium">Date & time</h3>
+      </div>
+      <div className="px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 md:items-stretch">
           {/* Row 1: Card and calendar same height */}
           <div className="order-2 min-w-0 md:order-1">
             <ServicesSummaryCard business={business} services={services} />
           </div>
           <div className="order-1 flex min-w-0 flex-col md:order-2">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Date
-            </p>
+            <p className="mb-2 text-xs text-muted-foreground">Date</p>
             <div
               className="relative w-full max-w-full flex-1"
               style={
@@ -136,7 +134,10 @@ export function DateTimePicker({ business, services, onSelect, primaryColor }: P
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(d) => {
+                  setDate(d);
+                  setPickedSlot(null);
+                }}
                 month={month}
                 onMonthChange={setMonth}
                 disabled={(d) => {
@@ -167,7 +168,7 @@ export function DateTimePicker({ business, services, onSelect, primaryColor }: P
               />
             </div>
             {(fullDates.size > 0 || blockedDates.size > 0) && (
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 {fullDates.size > 0 && (
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
@@ -186,10 +187,8 @@ export function DateTimePicker({ business, services, onSelect, primaryColor }: P
 
           {/* Row 2: Time picker underneath */}
           {date && (
-            <div className="border-t pt-5 md:col-span-2 md:pt-8">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Time
-              </p>
+            <div className="border-t border-border/60 pt-4 md:col-span-2 md:pt-6">
+              <p className="mb-2 text-xs text-muted-foreground">Time</p>
               {loadingSlots ? (
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -201,33 +200,86 @@ export function DateTimePicker({ business, services, onSelect, primaryColor }: P
                   No available slots for this date.
                 </p>
               ) : allSlotsUnavailable ? (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 py-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
-                  Fully booked. Please pick another date.
+                <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+                  No slots for this date
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
-                  {slots.map((slot) => (
-                    <Button
-                      key={slot.time}
-                      variant="outline"
-                      size="sm"
-                      disabled={!slot.available}
-                      className={cn(
-                        "min-h-[44px] sm:min-h-9",
-                        "bg-background text-sm font-normal",
-                        !slot.available && "opacity-40 line-through"
+                <>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
+                    {slots.map((slot) => (
+                      <Button
+                        key={slot.time}
+                        variant="outline"
+                        size="sm"
+                        disabled={!slot.available}
+                        className={cn(
+                          "min-h-[44px] sm:min-h-9",
+                          "bg-background text-sm font-normal",
+                          !slot.available && "opacity-40 line-through",
+                          pickedSlot?.time === slot.time && "ring-2 ring-offset-2",
+                          pickedSlot?.time === slot.time &&
+                            primaryColor &&
+                            "ring-[var(--calendar-brand)]"
+                        )}
+                        style={
+                          pickedSlot?.time === slot.time && primaryColor
+                            ? ({ "--calendar-brand": primaryColor } as React.CSSProperties)
+                            : undefined
+                        }
+                        onClick={() =>
+                          setPickedSlot((prev) =>
+                            prev?.time === slot.time ? null : slot
+                          )
+                        }
+                      >
+                        {formatTime(slot.time)}
+                      </Button>
+                    ))}
+                  </div>
+                  {pickedSlot && (
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {selectedService && onAddToCart && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="min-h-[44px] w-full sm:w-auto sm:min-h-9"
+                          style={
+                            primaryColor
+                              ? {
+                                  borderColor: primaryColor,
+                                  color: primaryColor,
+                                }
+                              : undefined
+                          }
+                          onClick={onAddToCart}
+                        >
+                          Add to cart
+                        </Button>
                       )}
-                      onClick={() => onSelect(dateStr, slot)}
-                    >
-                      {formatTime(slot.time)}
-                    </Button>
-                  ))}
-                </div>
+                      <Button
+                        size="sm"
+                        className="min-h-[44px] w-full sm:w-auto sm:min-h-9"
+                        style={
+                          primaryColor
+                            ? {
+                                backgroundColor: primaryColor,
+                                color: "white",
+                                borderColor: primaryColor,
+                              }
+                            : undefined
+                        }
+                        onClick={() => onSelect(dateStr, pickedSlot)}
+                      >
+                        Proceed to details
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

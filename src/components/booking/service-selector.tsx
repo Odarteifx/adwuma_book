@@ -10,8 +10,6 @@ import { Search } from "lucide-react";
 interface Props {
   services: Service[];
   onSelect: (service: Service) => void;
-  onAddToCart?: (service: Service) => void;
-  isInCart?: (serviceId: string) => boolean;
   primaryColor?: string;
 }
 
@@ -25,7 +23,7 @@ function filterServices(services: Service[], query: string): Service[] {
   );
 }
 
-export function ServiceSelector({ services, onSelect, onAddToCart, isInCart, primaryColor }: Props) {
+export function ServiceSelector({ services, onSelect, primaryColor }: Props) {
   const [search, setSearch] = useState("");
   const filteredServices = useMemo(
     () => filterServices(services, search),
@@ -34,70 +32,53 @@ export function ServiceSelector({ services, onSelect, onAddToCart, isInCart, pri
 
   if (services.length === 0) {
     return (
-      <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-        <p className="text-sm text-muted-foreground">
-          No services available at the moment.
-        </p>
+      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+        <p className="text-sm text-muted-foreground">No services available</p>
       </div>
     );
   }
 
   return (
-    <div className="animate-in fade-in duration-300 space-y-6">
-      <div className="space-y-1 text-center sm:text-left">
-        <h2 className="text-lg font-semibold tracking-tight">Choose a service</h2>
-        <p className="text-sm text-muted-foreground">
-          Select the service you&apos;d like to book
-        </p>
-      </div>
-      <div
-        className="relative"
-        style={
-          primaryColor
-            ? ({ "--search-focus": primaryColor } as React.CSSProperties)
-            : undefined
-        }
-      >
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search services..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={cn(
-            "h-10 pl-9 transition-colors",
-            primaryColor &&
-              "focus-visible:border-[var(--search-focus)] focus-visible:ring-[var(--search-focus)]"
-          )}
-          aria-label="Search services"
-        />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium sm:text-lg">Services</h2>
+        <div
+          className="relative w-full sm:w-48"
+          style={
+            primaryColor
+              ? ({ "--search-focus": primaryColor } as React.CSSProperties)
+              : undefined
+          }
+        >
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={cn(
+              "h-9 pl-8 text-sm",
+              primaryColor &&
+                "focus-visible:border-[var(--search-focus)] focus-visible:ring-[var(--search-focus)]"
+            )}
+            aria-label="Search services"
+          />
+        </div>
       </div>
       {filteredServices.length === 0 ? (
-        <div className="flex min-h-[120px] flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No services match &quot;{search}&quot;
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Try a different search term
-          </p>
+        <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+          No match for &quot;{search}&quot;
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {filteredServices.map((service, i) => (
-            <div
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+          {filteredServices.map((service) => (
+            <ServiceCard
               key={service.id}
-              className="animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-forwards"
-              style={{ "--tw-animation-delay": `${i * 50}ms` } as React.CSSProperties}
-            >
-              <ServiceCard
-                service={service}
-                variant="select"
-                primaryColor={primaryColor}
-                onSelect={onSelect}
-                onAddToCart={onAddToCart}
-                isInCart={isInCart?.(service.id)}
-              />
-            </div>
+              service={service}
+              variant="select"
+              primaryColor={primaryColor}
+              onSelect={onSelect}
+            />
           ))}
         </div>
       )}
