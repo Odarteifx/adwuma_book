@@ -230,6 +230,9 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
                 )}
                 Pay & confirm
               </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Secure payment by Paystack · Card & mobile money
+              </p>
             </form>
           </Form>
         </div>
