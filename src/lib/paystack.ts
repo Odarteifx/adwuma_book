@@ -1,14 +1,19 @@
 import crypto from "crypto";
 
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
 const PAYSTACK_BASE = "https://api.paystack.co";
+
+function getSecret(): string | undefined {
+  return process.env.PAYSTACK_SECRET_KEY;
+}
 
 export function verifyWebhookSignature(
   body: string,
   signature: string
 ): boolean {
+  const secret = getSecret();
+  if (!secret) return false;
   const hash = crypto
-    .createHmac("sha512", PAYSTACK_SECRET)
+    .createHmac("sha512", secret)
     .update(body)
     .digest("hex");
   return hash === signature;
@@ -21,10 +26,13 @@ export async function initializeTransaction(params: {
   callback_url: string;
   metadata?: Record<string, unknown>;
 }) {
+  const secret = getSecret();
+  if (!secret) throw new Error("PAYSTACK_SECRET_KEY is not configured");
+
   const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET}`,
+      Authorization: `Bearer ${secret}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -50,11 +58,14 @@ export async function initializeTransaction(params: {
 }
 
 export async function verifyTransaction(reference: string) {
+  const secret = getSecret();
+  if (!secret) throw new Error("PAYSTACK_SECRET_KEY is not configured");
+
   const res = await fetch(
     `${PAYSTACK_BASE}/transaction/verify/${encodeURIComponent(reference)}`,
     {
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET}`,
+        Authorization: `Bearer ${secret}`,
       },
     }
   );
