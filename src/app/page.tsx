@@ -189,7 +189,7 @@ export default function LandingPage() {
         <section className="py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="relative overflow-hidden rounded-2xl bg-primary px-6 py-16 text-center text-primary-foreground sm:px-12">
-              <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,oklch(0.7_0.15_262/0.3),transparent)]" />
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,oklch(0.65_0.2_250/0.3),transparent)]" />
               <h2 className="text-3xl font-bold tracking-tight">
                 Ready to take bookings?
               </h2>
