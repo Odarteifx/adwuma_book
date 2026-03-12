@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ReviewForm } from "@/components/booking/review-form";
+import { VerifyPaymentOnReturn } from "@/components/booking/verify-payment-on-return";
 import { CheckCircle2, Clock, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,12 @@ import { formatDate, formatTime } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ booking_id?: string; booking_ids?: string }>;
+  searchParams: Promise<{ booking_id?: string; booking_ids?: string; reference?: string }>;
 }
 
 export default async function SuccessPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { booking_id, booking_ids } = await searchParams;
+  const { booking_id, booking_ids, reference } = await searchParams;
 
   const ids = booking_ids
     ? booking_ids.split(",").filter(Boolean)
@@ -53,6 +54,10 @@ export default async function SuccessPage({ params, searchParams }: Props) {
 
   return (
     <div className="flex flex-1 items-center justify-center px-4">
+      <VerifyPaymentOnReturn
+        reference={reference ?? null}
+        isConfirmed={isConfirmed}
+      />
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <div
