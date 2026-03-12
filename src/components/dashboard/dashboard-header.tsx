@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { LogOut, Menu, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -98,6 +99,7 @@ export function DashboardHeader({
         </div>
       )}
 
+      <ThemeSwitcher />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">

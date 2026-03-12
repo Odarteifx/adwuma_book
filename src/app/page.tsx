@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   CalendarCheck,
   CreditCard,
@@ -83,7 +84,8 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-bold">Adwuma Book</span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeSwitcher />
             <Button variant="ghost" size="sm" asChild>
               <Link href="/login">Sign In</Link>
             </Button>
