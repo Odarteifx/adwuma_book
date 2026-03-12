@@ -75,7 +75,12 @@ const benefits = [
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col bg-background">
+      {/* Full-bleed background pattern - grid from top-left, fades to right and bottom */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 bg-pattern-grid bg-pattern-grid-fade"
+        aria-hidden
+      />
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
