@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AnimatedCount } from "@/components/dashboard/animated-count";
 import { AnalyticsSkeleton } from "@/components/dashboard/skeletons";
 import { CalendarCheck, CreditCard, TrendingUp, Bot } from "lucide-react";
 import {
@@ -180,7 +181,9 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-bold sm:text-2xl">{metrics.totalBookings}</p>
+            <p className="text-lg font-bold sm:text-2xl">
+              <AnimatedCount value={metrics.totalBookings} duration={800} />
+            </p>
             <p className="text-xs text-muted-foreground">
               {metrics.confirmedBookings} confirmed
             </p>
@@ -195,7 +198,12 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-lg font-bold sm:text-2xl">
-              GHS {metrics.totalRevenue.toFixed(2)}
+              <AnimatedCount
+                value={metrics.totalRevenue}
+                duration={800}
+                prefix="GHS "
+                decimals={2}
+              />
             </p>
             <p className="text-xs text-muted-foreground">Deposits collected</p>
           </CardContent>
@@ -210,7 +218,13 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-bold sm:text-2xl">{metrics.conversionRate}%</p>
+            <p className="text-lg font-bold sm:text-2xl">
+              <AnimatedCount
+                value={metrics.conversionRate}
+                duration={800}
+                suffix="%"
+              />
+            </p>
             <p className="text-xs text-muted-foreground">
               Cancellation: {metrics.cancellationRate}%
             </p>
@@ -226,7 +240,9 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-bold sm:text-2xl">{metrics.aiChats}</p>
+            <p className="text-lg font-bold sm:text-2xl">
+              <AnimatedCount value={metrics.aiChats} duration={800} />
+            </p>
             <p className="text-xs text-muted-foreground">
               {metrics.aiToBooking} led to booking
             </p>

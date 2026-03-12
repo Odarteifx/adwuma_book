@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AnimatedCount } from "@/components/dashboard/animated-count";
 import { CalendarCheck, CreditCard, Users, TrendingUp } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -59,6 +60,9 @@ export default async function DashboardPage() {
       icon: CalendarCheck,
       description: "All time",
       iconClass: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40",
+      decimals: 0,
+      prefix: "",
+      suffix: "",
     },
     {
       title: "Active Bookings",
@@ -66,13 +70,19 @@ export default async function DashboardPage() {
       icon: Users,
       description: "Confirmed",
       iconClass: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/40",
+      decimals: 0,
+      prefix: "",
+      suffix: "",
     },
     {
       title: "Revenue",
-      value: `GHS ${totalRevenue.toFixed(2)}`,
+      value: totalRevenue,
       icon: CreditCard,
       description: "Deposits collected",
       iconClass: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40",
+      decimals: 2,
+      prefix: "GHS ",
+      suffix: "",
     },
     {
       title: "Today",
@@ -80,6 +90,9 @@ export default async function DashboardPage() {
       icon: TrendingUp,
       description: "Bookings today",
       iconClass: "text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-950/40",
+      decimals: 0,
+      prefix: "",
+      suffix: "",
     },
   ];
 
@@ -106,7 +119,15 @@ export default async function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold sm:text-2xl">{stat.value}</div>
+              <div className="text-lg font-bold sm:text-2xl">
+                <AnimatedCount
+                  value={stat.value}
+                  duration={800}
+                  prefix={stat.prefix}
+                  suffix={stat.suffix}
+                  decimals={stat.decimals}
+                />
+              </div>
               <CardDescription>{stat.description}</CardDescription>
             </CardContent>
           </Card>

@@ -8,7 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Star, MessageSquare, TrendingUp } from "lucide-react";
+import { AnimatedCount } from "@/components/dashboard/animated-count";
 import { AnalyticsSkeleton } from "@/components/dashboard/skeletons";
 import {
   ChartContainer,
@@ -43,6 +51,7 @@ export default function ReviewsPage() {
     recentTrend: { date: string; average: number | null; count: number }[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ratingFilter, setRatingFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!business) return;
@@ -79,6 +88,11 @@ export default function ReviewsPage() {
       }))
     : [];
 
+  const filteredReviews =
+    ratingFilter === "all"
+      ? reviews
+      : reviews.filter((r) => r.rating === Number(ratingFilter));
+
   return (
     <div className="min-w-0 space-y-6">
       <div>
@@ -101,7 +115,15 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-lg font-bold sm:text-2xl">
-              {analytics?.averageRating?.toFixed(1) ?? "—"}
+              {analytics?.averageRating != null ? (
+                <AnimatedCount
+                  value={analytics.averageRating}
+                  duration={800}
+                  decimals={1}
+                />
+              ) : (
+                "—"
+              )}
             </p>
             <p className="text-xs text-muted-foreground">Out of 5</p>
           </CardContent>
@@ -116,7 +138,12 @@ export default function ReviewsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-bold sm:text-2xl">{analytics?.totalReviews ?? 0}</p>
+            <p className="text-lg font-bold sm:text-2xl">
+              <AnimatedCount
+                value={analytics?.totalReviews ?? 0}
+                duration={800}
+              />
+            </p>
             <p className="text-xs text-muted-foreground">Customer feedback</p>
           </CardContent>
         </Card>
@@ -129,7 +156,10 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-lg font-bold sm:text-2xl">
-              {analytics?.ratingDistribution?.[5] ?? 0}
+              <AnimatedCount
+                value={analytics?.ratingDistribution?.[5] ?? 0}
+                duration={800}
+              />
             </p>
             <p className="text-xs text-muted-foreground">
               {analytics?.totalReviews
@@ -149,8 +179,13 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-lg font-bold sm:text-2xl">
-              {(analytics?.ratingDistribution?.[1] ?? 0) +
-                (analytics?.ratingDistribution?.[2] ?? 0)}
+              <AnimatedCount
+                value={
+                  (analytics?.ratingDistribution?.[1] ?? 0) +
+                  (analytics?.ratingDistribution?.[2] ?? 0)
+                }
+                duration={800}
+              />
             </p>
             <p className="text-xs text-muted-foreground">Needs attention</p>
           </CardContent>
@@ -247,17 +282,34 @@ export default function ReviewsPage() {
 
       {/* Reviews list */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>All Reviews</CardTitle>
+          <Select value={ratingFilter} onValueChange={setRatingFilter}>
+            <SelectTrigger className="w-full sm:w-[10rem]">
+              <SelectValue placeholder="Filter by rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All ratings</SelectItem>
+              {[5, 4, 3, 2, 1].map((r) => (
+                <SelectItem key={r} value={String(r)}>
+                  {r} star{r !== 1 ? "s" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent>
           {reviews.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               No reviews yet
             </div>
+          ) : filteredReviews.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              No reviews match the selected rating
+            </div>
           ) : (
             <div className="space-y-4">
-              {reviews.map((review) => (
+              {filteredReviews.map((review) => (
                 <div
                   key={review.id}
                   className="flex flex-col gap-2 border-b pb-4 last:border-0 last:pb-0"
