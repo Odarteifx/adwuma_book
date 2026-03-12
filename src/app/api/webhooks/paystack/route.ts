@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyWebhookSignature, verifyTransaction } from "@/lib/paystack";
-import { sendBookingConfirmation } from "@/lib/whatsapp";
+import { verifyWebhookSignature } from "@/lib/paystack";
+import { confirmPaymentByReference } from "@/lib/confirm-payment";
 
 export async function POST(request: NextRequest) {
+  if (!process.env.PAYSTACK_SECRET_KEY) {
+    console.error("Paystack webhook called but PAYSTACK_SECRET_KEY is not set");
+    return NextResponse.json(
+      { error: "Payments not configured" },
+      { status: 503 }
+    );
+  }
+
   const supabase = createAdminClient();
   let rawBody = "";
 
@@ -34,147 +42,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No reference" }, { status: 400 });
     }
 
-    // Idempotency: check if payment already processed
-    const { data: payment } = await supabase
-      .from("payments")
-      .select("id, booking_id, business_id, amount, status, metadata")
-      .eq("paystack_reference", reference)
-      .single();
-
-    if (!payment) {
-      console.error("Payment record not found for reference:", reference);
-      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
-    }
-
-    if (payment.status === "success") {
-      return NextResponse.json({ received: true, already_processed: true });
-    }
-
-    // Verify transaction with Paystack API
-    const txn = await verifyTransaction(reference);
-
-    if (txn.status !== "success") {
-      await supabase
-        .from("payments")
-        .update({ status: "failed" })
-        .eq("id", payment.id);
-      return NextResponse.json({ error: "Transaction not successful" }, { status: 400 });
-    }
-
-    // Verify amount matches
-    const expectedPesewas = Math.round(Number(payment.amount) * 100);
-    if (txn.amount !== expectedPesewas) {
-      console.error(
-        `Amount mismatch: expected ${expectedPesewas}, got ${txn.amount}`
-      );
-      await supabase
-        .from("payments")
-        .update({ status: "failed" })
-        .eq("id", payment.id);
-      return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
-    }
-
-    // Confirm booking(s) via RPC (slot locking)
-    const bookingIdsToConfirm =
-      (payment.metadata as { booking_ids?: string[] })?.booking_ids ?? [
-        payment.booking_id,
-      ];
-
-    let allConfirmed = true;
-    for (const bid of bookingIdsToConfirm) {
-      const { data: confirmed } = await supabase.rpc(
-        "confirm_booking_if_available",
-        { p_booking_id: bid }
-      );
-      if (!confirmed) {
-        allConfirmed = false;
-        break;
-      }
-    }
-
-    if (!allConfirmed) {
-      await supabase
-        .from("payments")
-        .update({ status: "failed" })
-        .eq("id", payment.id);
-      console.error("Slot no longer available, booking could not be confirmed");
-      return NextResponse.json(
-        { error: "Slot no longer available" },
-        { status: 409 }
-      );
-    }
-
-    // Update payment to success
-    await supabase
-      .from("payments")
-      .update({
-        status: "success",
-        paystack_transaction_id: String(txn.id),
-      })
-      .eq("id", payment.id);
-
-    const bookingIdsForAnalytics =
-      (payment.metadata as { booking_ids?: string[] })?.booking_ids ?? [
-        payment.booking_id,
-      ];
-
-    // Log analytics
-    await supabase.from("analytics_events").insert({
-      business_id: payment.business_id,
-      event_type: "deposit_paid",
-      metadata: {
-        booking_id: payment.booking_id,
-        booking_ids: bookingIdsForAnalytics,
-        amount: payment.amount,
-        reference,
-      },
-    });
-
-    for (const bid of bookingIdsForAnalytics) {
-      await supabase.from("analytics_events").insert({
-        business_id: payment.business_id,
-        event_type: "booking_confirmed",
-        metadata: { booking_id: bid },
-      });
-    }
-
-    // Send WhatsApp notification to vendor (use first booking for details)
-    const { data: booking } = await supabase
-      .from("bookings")
-      .select("*, services(name)")
-      .eq("id", payment.booking_id)
-      .single();
-
-    const { data: business } = await supabase
-      .from("businesses")
-      .select("whatsapp_number")
-      .eq("id", payment.business_id)
-      .single();
-
-    if (booking && business) {
-      const serviceNames =
-        bookingIdsForAnalytics.length > 1
-          ? `${bookingIdsForAnalytics.length} services`
-          : booking.services?.name || "Service";
-
-      await sendBookingConfirmation({
-        recipientPhone: business.whatsapp_number,
-        customerName: booking.customer_name,
-        serviceName: serviceNames,
-        date: booking.booking_date,
-        time: booking.start_time,
-        depositAmount: Number(payment.amount).toFixed(2),
-      });
-    }
+    const result = await confirmPaymentByReference(reference);
 
     // Mark webhook as processed
-    await supabase
+    const { data: logRow } = await supabase
       .from("webhook_logs")
-      .update({ processed: true })
-      .eq("payload->>reference", reference)
-      .eq("source", "paystack");
+      .select("id")
+      .eq("source", "paystack")
+      .eq("event_type", "charge.success")
+      .contains("payload", { data: { reference } })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (logRow) {
+      await supabase
+        .from("webhook_logs")
+        .update({ processed: true })
+        .eq("id", logRow.id);
+    }
 
-    return NextResponse.json({ received: true, confirmed: true });
+    if (result.ok) {
+      return NextResponse.json({ received: true, confirmed: true });
+    }
+
+    console.error("Webhook confirmPaymentByReference failed:", result.error);
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status }
+    );
   } catch (error) {
     console.error("Webhook processing error:", error);
 
