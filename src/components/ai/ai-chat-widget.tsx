@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, X, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Service } from "@/types";
+import { ChatBookingForm } from "./chat-booking-form";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,11 +16,21 @@ interface Message {
 interface Props {
   businessId: string;
   businessName: string;
+  businessSlug: string;
+  services?: Service[];
   primaryColor?: string;
+  onAddToCart?: () => void;
 }
 
-export function AIChatWidget({ businessId, businessName, primaryColor }: Props) {
+function matchServiceByName(services: Service[], name: string): Service | null {
+  const normalize = (s: string) => s.toLowerCase().trim().replace(/\s/g, "");
+  const n = normalize(name);
+  return services.find((s) => normalize(s.name) === n) || null;
+}
+
+export function AIChatWidget({ businessId, businessName, businessSlug, services = [], primaryColor, onAddToCart }: Props) {
   const [open, setOpen] = useState(false);
+  const [showBookingForm, setShowBookingForm] = useState<Service[] | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -57,11 +69,28 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
       });
 
       const data = await res.json();
+      const responseText = data.error || data.response || "Sorry, I couldn't process that. Please try again.";
       const assistantMsg: Message = {
         role: "assistant",
-        content: data.response || "Sorry, I couldn't process that. Please try again.",
+        content: responseText,
       };
       setMessages((prev) => [...prev, assistantMsg]);
+
+      if (!data.error && data.redirect_to_payment) {
+        window.location.href = data.redirect_to_payment;
+        return;
+      }
+
+      if (!data.error && data.action?.type === "add_to_cart" && data.action.serviceNames?.length > 0 && services.length > 0) {
+        const matched: Service[] = [];
+        for (const name of data.action.serviceNames) {
+          const service = matchServiceByName(services, name);
+          if (service) matched.push(service);
+        }
+        if (matched.length > 0) {
+          setShowBookingForm(matched);
+        }
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -131,6 +160,17 @@ export function AIChatWidget({ businessId, businessName, primaryColor }: Props) 
                   {msg.content}
                 </div>
               ))}
+              {showBookingForm && (
+                <div className="max-w-full">
+                  <ChatBookingForm
+                    businessId={businessId}
+                    businessSlug={businessSlug}
+                    services={showBookingForm}
+                    primaryColor={primaryColor}
+                    onCancel={() => setShowBookingForm(null)}
+                  />
+                </div>
+              )}
               {loading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />

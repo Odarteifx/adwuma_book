@@ -149,7 +149,14 @@ export function BookingPageClient({ business, services, reviewsCount = 0 }: Prop
       <AIChatWidget
         businessId={business.id}
         businessName={business.name}
+        businessSlug={business.slug}
+        services={services}
         primaryColor={primaryColor}
+        onAddToCart={() => {
+          setHeaderTab("services");
+          setSelectedService(null);
+          setStep("datetime");
+        }}
       />
     </div>
   );
