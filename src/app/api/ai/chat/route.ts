@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildSystemPrompt } from "@/lib/ai/chat";
 import { aiChatLimiter, checkRateLimit } from "@/lib/rate-limit";
+import { getAvailableDates } from "@/lib/availability";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const { data: business } = await supabase
       .from("businesses")
-      .select("name, description, category, location")
+      .select("id, name, description, category, location, slug")
       .eq("id", business_id)
       .single();
 
@@ -39,9 +40,14 @@ export async function POST(request: NextRequest) {
 
     const { data: services } = await supabase
       .from("services")
-      .select("name, description, price, duration_minutes, deposit_type, deposit_value")
+      .select("id, name, description, price, duration_minutes, deposit_type, deposit_value")
       .eq("business_id", business_id)
       .eq("is_active", true);
+
+    const minDuration = (services || []).length > 0
+      ? Math.min(...(services || []).map((s) => s.duration_minutes ?? 30))
+      : 30;
+    const availableDates = await getAvailableDates(business_id, minDuration, 7);
 
     // Get conversation history for context
     let conversationHistory: Array<{ role: string; content: string }> = [];
@@ -77,6 +83,7 @@ export async function POST(request: NextRequest) {
           deposit_value: Number(s.deposit_value),
           description: s.description,
         })),
+        availableDates,
       },
       sanitizedMessage
     );
@@ -119,9 +126,11 @@ export async function POST(request: NextRequest) {
     });
 
     const aiData = await aiRes.json();
-    const response =
+    const rawResponse =
       aiData.choices?.[0]?.message?.content ||
       "I'm sorry, I couldn't process that. Please try again.";
+
+    const { message: response, action } = parseAIResponse(rawResponse);
 
     await logConversation(
       supabase,
@@ -131,7 +140,27 @@ export async function POST(request: NextRequest) {
       response
     );
 
-    return NextResponse.json({ response });
+    let redirectToPayment: string | undefined;
+    if (action?.type === "book_now") {
+      const result = await executeBookNow(request, {
+        business,
+        services: services || [],
+        action,
+      });
+      if (result.redirect_to_payment) redirectToPayment = result.redirect_to_payment;
+      if (result.error) {
+        return NextResponse.json(
+          { response: result.error, action: undefined },
+          { status: 200 }
+        );
+      }
+    }
+
+    const payload: Record<string, unknown> = { response };
+    if (action && action.type !== "book_now") payload.action = action;
+    if (redirectToPayment) payload.redirect_to_payment = redirectToPayment;
+
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("AI chat error:", error);
     return NextResponse.json(
@@ -139,6 +168,176 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+const ADD_TO_CART_REGEX = /\[ADD_TO_CART:([^\]]+)\]/gi;
+const BOOK_NOW_REGEX = /\[BOOK_NOW:([^\]]+)\]/gi;
+
+function normalizeTime(input: string): string {
+  const t = input.trim().toLowerCase();
+  const ampm = t.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (ampm) {
+    let h = parseInt(ampm[1], 10);
+    const m = ampm[2] ? parseInt(ampm[2], 10) : 0;
+    const meridiem = ampm[3]?.toLowerCase();
+    if (meridiem === "pm" && h < 12) h += 12;
+    if (meridiem === "am" && h === 12) h = 0;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  if (/^\d{1,2}:\d{2}$/.test(t)) {
+    const [h, m] = t.split(":").map(Number);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  return input;
+}
+
+function parseAIResponse(raw: string): {
+  message: string;
+  action?:
+    | { type: "add_to_cart"; serviceNames: string[] }
+    | {
+        type: "book_now";
+        serviceName: string;
+        date: string;
+        time: string;
+        customerName: string;
+        customerPhone: string;
+        customerEmail?: string;
+      };
+} {
+  const bookNowMatch = raw.match(BOOK_NOW_REGEX);
+  if (bookNowMatch) {
+    const last = bookNowMatch[bookNowMatch.length - 1];
+    const inner = last.replace(/\[BOOK_NOW:/i, "").replace(/\]$/, "").trim();
+    const parts = inner.split("|").map((p) => p.trim());
+    if (parts.length >= 5) {
+      const [serviceName, date, time, customerName, customerPhone, customerEmail] = parts;
+      const message = raw.replace(BOOK_NOW_REGEX, "").replace(/\n{2,}/g, "\n").trim();
+      return {
+        message,
+        action: {
+          type: "book_now",
+          serviceName,
+          date,
+          time: normalizeTime(time),
+          customerName,
+          customerPhone,
+          customerEmail: customerEmail || undefined,
+        },
+      };
+    }
+  }
+
+  const match = raw.match(ADD_TO_CART_REGEX);
+  let message = raw;
+
+  if (match) {
+    const lastMatch = match[match.length - 1];
+    const inner = lastMatch
+      .replace(/\[ADD_TO_CART:/i, "")
+      .replace(/\]$/, "")
+      .trim();
+    const serviceNames = inner
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    message = raw.replace(ADD_TO_CART_REGEX, "").replace(/\n{2,}/g, "\n").trim();
+    return {
+      message,
+      action: serviceNames.length > 0 ? { type: "add_to_cart", serviceNames } : undefined,
+    };
+  }
+
+  return { message };
+}
+
+function matchServiceByName(
+  services: Array<{ id: string; name: string }>,
+  name: string
+): { id: string } | null {
+  const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, "");
+  const n = normalize(name);
+  const found = services.find((s) => normalize(s.name) === n);
+  return found ? { id: found.id } : null;
+}
+
+async function executeBookNow(
+  request: NextRequest,
+  ctx: {
+    business: { id: string; slug: string };
+    services: Array<{ id: string; name: string }>;
+    action: {
+      type: "book_now";
+      serviceName: string;
+      date: string;
+      time: string;
+      customerName: string;
+      customerPhone: string;
+      customerEmail?: string;
+    };
+  }
+): Promise<{ redirect_to_payment?: string; error?: string }> {
+  const { business, services, action } = ctx;
+  const service = matchServiceByName(services, action.serviceName);
+  if (!service) {
+    return { error: `Service "${action.serviceName}" not found. Please select from our available services.` };
+  }
+
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (request.url ? new URL(request.url).origin : "http://localhost:3000");
+
+  const batchRes = await fetch(`${base}/api/bookings/batch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      business_id: business.id,
+      service_ids: [service.id],
+      booking_date: action.date,
+      start_time: action.time,
+      customer_name: action.customerName,
+      customer_phone: action.customerPhone,
+      customer_email: action.customerEmail || null,
+    }),
+  });
+
+  const batchData = await batchRes.json();
+  if (!batchRes.ok) {
+    return {
+      error: batchData.error || "That slot is no longer available. Please choose another date or time.",
+    };
+  }
+
+  const { booking_ids, total_deposit } = batchData;
+  const email = action.customerEmail || "customer@adwuma.book";
+  const callbackUrl = `${base}/b/${business.slug}/success`;
+
+  const initRes = await fetch(`${base}/api/payments/initialize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      booking_ids,
+      total_deposit,
+      email,
+      callback_url: callbackUrl,
+    }),
+  });
+
+  const initData = await initRes.json();
+  if (!initRes.ok) {
+    return {
+      error: initData.error || "Failed to create payment link. Please try again.",
+    };
+  }
+
+  const authUrl = initData.authorization_url;
+  if (!authUrl) {
+    return {
+      error: "Payment setup is not configured. Please contact the business directly.",
+    };
+  }
+
+  return { redirect_to_payment: authUrl };
 }
 
 function generateFallbackResponse(
