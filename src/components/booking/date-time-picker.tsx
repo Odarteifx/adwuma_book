@@ -103,11 +103,11 @@ export function DateTimePicker({
     slots.length > 0 && slots.every((s) => !s.available);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/60">
-      <div className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
+    <div className="overflow-hidden rounded-lg border border-border/60 bg-card">
+      <div className="border-b border-border/60 bg-card px-4 py-3 sm:px-6 sm:py-4">
         <h3 className="text-base font-medium">Date & time</h3>
       </div>
-      <div className="px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
+      <div className="bg-card px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 md:items-stretch">
           {/* Row 1: Card and calendar same height */}
           <div className="order-2 min-w-0 md:order-1">

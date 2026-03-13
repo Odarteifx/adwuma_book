@@ -108,11 +108,11 @@ export function CustomerForm({ business, services, date, slot, primaryColor }: P
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/60">
-      <div className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
+    <div className="overflow-hidden rounded-lg border border-border/60 bg-card">
+      <div className="border-b border-border/60 bg-card px-4 py-3 sm:px-6 sm:py-4">
         <h3 className="text-base font-medium">Your details</h3>
       </div>
-      <div className="px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
+      <div className="bg-card px-4 pb-4 sm:px-6 sm:pb-6 pt-4">
         <div className="grid min-h-0 gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,1.5fr)] md:gap-6 md:items-stretch">
           <div className="order-2 min-w-0 md:order-1 md:min-h-0">
             <ServicesSummaryCard
