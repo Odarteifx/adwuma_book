@@ -242,15 +242,15 @@ export default function AIManagerPage() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border border-border/60 bg-card shadow-none">
+        <CardHeader className="px-4 py-3 sm:px-5 sm:py-3.5">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Bot className="h-5 w-5" />
             How it works
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
+        <CardContent className="px-4 pb-4 pt-0 sm:px-5 sm:pb-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             Add your business FAQs, policies, and information here. The AI
             assistant on your booking page will use this knowledge to answer
             customer questions and guide them to book. The more info you
@@ -275,18 +275,23 @@ export default function AIManagerPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {docs.map((doc) => (
-            <Card key={doc.id}>
-              <CardHeader className="flex flex-row items-start justify-between pb-2">
-                <div className="space-y-1">
+            <Card
+              key={doc.id}
+              className="border border-border/60 bg-card shadow-none"
+            >
+              <CardHeader className="flex flex-row items-start justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-base">{doc.title}</CardTitle>
-                    <Badge variant="outline" className="text-xs">
+                    <CardTitle className="text-sm font-medium">
+                      {doc.title}
+                    </CardTitle>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
                       {doc.doc_type}
                     </Badge>
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <CardDescription className="line-clamp-1 text-xs text-muted-foreground">
                     {doc.content}
                   </CardDescription>
                 </div>
@@ -294,6 +299,7 @@ export default function AIManagerPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-7 w-7"
                     onClick={() => openEdit(doc)}
                   >
                     <Pencil className="h-4 w-4" />
@@ -301,7 +307,7 @@ export default function AIManagerPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-destructive"
+                    className="h-7 w-7 text-destructive"
                     onClick={() => handleDelete(doc.id)}
                   >
                     <Trash2 className="h-4 w-4" />
