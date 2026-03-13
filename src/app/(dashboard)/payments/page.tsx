@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/hooks/use-business";
@@ -14,8 +14,17 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PaymentsSkeleton } from "@/components/dashboard/skeletons";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { CreditCard, TrendingUp, Calendar } from "lucide-react";
+import { CreditCard, TrendingUp, Calendar, Copy, Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type PaymentRow = Payment & {
   bookings?: {
@@ -25,10 +34,30 @@ type PaymentRow = Payment & {
   };
 };
 
+type TransactionDetails = {
+  reference: string;
+  amount: number;
+  currency: string;
+  channel?: string;
+  payment_method?: string;
+  paid_at?: string;
+  created_at?: string;
+  authorization?: { card_type?: string; last4?: string; bank?: string };
+};
+
+type PaymentStatusFilter = "all" | "success" | "pending" | "failed";
+
 export default function PaymentsPage() {
   const { business } = useBusiness();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRow | null>(null);
+  const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     if (!business) return;
@@ -66,6 +95,53 @@ export default function PaymentsPage() {
     .filter((p) => p.created_at.startsWith(thisMonth))
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
+  const filteredPayments = useMemo(() => {
+    let list = payments;
+    if (statusFilter !== "all") {
+      list = list.filter((p) => p.status === statusFilter);
+    }
+    if (dateFrom) {
+      list = list.filter((p) => p.created_at.split("T")[0] >= dateFrom);
+    }
+    if (dateTo) {
+      list = list.filter((p) => p.created_at.split("T")[0] <= dateTo);
+    }
+    if (search.trim()) {
+      const s = search.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.bookings?.customer_name?.toLowerCase().includes(s) ||
+          p.paystack_reference.toLowerCase().includes(s)
+      );
+    }
+    return list;
+  }, [payments, statusFilter, dateFrom, dateTo, search]);
+
+  const handleRowClick = useCallback(async (payment: PaymentRow) => {
+    setSelectedPayment(payment);
+    setTransactionDetails(null);
+    setDetailsLoading(true);
+    try {
+      const res = await fetch(
+        `/api/payments/details?reference=${encodeURIComponent(payment.paystack_reference)}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setTransactionDetails(data);
+      }
+    } catch {
+      toast.error("Failed to load transaction details");
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, []);
+
+  const handleCopyReference = useCallback((e: React.MouseEvent, ref: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(ref);
+    toast.success("Reference copied to clipboard");
+  }, []);
+
   const columns: ColumnDef<PaymentRow>[] = useMemo(
     () => [
       {
@@ -95,11 +171,27 @@ export default function PaymentsPage() {
       {
         accessorKey: "paystack_reference",
         header: "Reference",
-        cell: ({ row }) => (
-          <span className="font-mono text-xs">
-            {row.original.paystack_reference.slice(0, 20)}…
-          </span>
-        ),
+        cell: ({ row }) => {
+          const ref = row.original.paystack_reference;
+          return (
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs">
+                  {ref.length > 20 ? `${ref.slice(0, 20)}…` : ref}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={(e) => handleCopyReference(e, ref)}
+                  title="Copy reference"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "created_at",
@@ -107,7 +199,7 @@ export default function PaymentsPage() {
         cell: ({ row }) => formatDate(row.original.created_at.split("T")[0]),
       },
     ],
-    []
+    [handleCopyReference]
   );
 
   if (!business) {
@@ -157,6 +249,55 @@ export default function PaymentsPage() {
         </Card>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[140px] max-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Customer or reference..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 pl-8 text-sm"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as PaymentStatusFilter)}
+          className="h-9 rounded-md border border-input bg-background pl-3 pr-8 py-1 text-sm"
+        >
+          <option value="all">All statuses</option>
+          <option value="success">Success</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+        </select>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+        />
+        {(dateFrom || dateTo || statusFilter !== "all" || search.trim()) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => {
+              setDateFrom("");
+              setDateTo("");
+              setStatusFilter("all");
+              setSearch("");
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
+
       {loading ? (
         <PaymentsSkeleton />
       ) : payments.length === 0 ? (
@@ -165,25 +306,127 @@ export default function PaymentsPage() {
             No payments yet
           </CardContent>
         </Card>
+      ) : filteredPayments.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No payments match your filters
+          </CardContent>
+        </Card>
       ) : (
-        <DataTable
-          columns={columns}
-          data={payments}
-          mobileCard={(payment) => (
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-sm font-medium">
-                  {payment.bookings?.customer_name || "—"}
-                </p>
-                <StatusBadge status={payment.status} />
+        <>
+          <DataTable
+            columns={columns}
+            data={filteredPayments}
+            onRowClick={handleRowClick}
+            mobileCard={(payment) => (
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-medium">
+                    {payment.bookings?.customer_name || "—"}
+                  </p>
+                  <StatusBadge status={payment.status} />
+                </div>
+                <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>GHS {Number(payment.amount).toFixed(2)} · {payment.bookings?.services?.name || "—"}</span>
+                  <span>{formatDate(payment.created_at.split("T")[0])}</span>
+                </div>
               </div>
-              <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>GHS {Number(payment.amount).toFixed(2)} · {payment.bookings?.services?.name || "—"}</span>
-                <span>{formatDate(payment.created_at.split("T")[0])}</span>
-              </div>
-            </div>
-          )}
-        />
+            )}
+          />
+
+          <Dialog
+            open={!!selectedPayment}
+            onOpenChange={(open) => !open && setSelectedPayment(null)}
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Transaction details</DialogTitle>
+              </DialogHeader>
+              {selectedPayment && (
+                <div className="space-y-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Customer</span>
+                      <span>{selectedPayment.bookings?.customer_name || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Service</span>
+                      <span>{selectedPayment.bookings?.services?.name || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="font-medium">
+                        GHS {Number(selectedPayment.amount).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Status</span>
+                      <StatusBadge status={selectedPayment.status} />
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-muted-foreground">Reference</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-xs truncate max-w-[140px]">
+                          {selectedPayment.paystack_reference}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          onClick={(e) =>
+                            handleCopyReference(e, selectedPayment.paystack_reference)
+                          }
+                          title="Copy reference"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Date</span>
+                      <span>
+                        {formatDate(selectedPayment.created_at.split("T")[0])}
+                      </span>
+                    </div>
+                  </div>
+
+                  {detailsLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading payment method…
+                    </div>
+                  ) : transactionDetails ? (
+                    <div className="rounded-lg border p-3 space-y-2 text-sm">
+                      <p className="font-medium">Payment method</p>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Channel</span>
+                        <span>{transactionDetails.payment_method || transactionDetails.channel || "—"}</span>
+                      </div>
+                      {transactionDetails.authorization?.card_type && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Card type</span>
+                          <span>{transactionDetails.authorization.card_type}</span>
+                        </div>
+                      )}
+                      {transactionDetails.authorization?.last4 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Last 4 digits</span>
+                          <span>•••• {transactionDetails.authorization.last4}</span>
+                        </div>
+                      )}
+                      {transactionDetails.authorization?.bank && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Bank</span>
+                          <span>{transactionDetails.authorization.bank}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </div>
   );

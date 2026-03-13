@@ -35,6 +35,9 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<BookingTab>("all");
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -112,6 +115,17 @@ export default function BookingsPage() {
         break;
     }
 
+    if (statusFilter !== "all") {
+      list = list.filter((b) => b.status === statusFilter);
+    }
+
+    if (dateFrom) {
+      list = list.filter((b) => b.booking_date >= dateFrom);
+    }
+    if (dateTo) {
+      list = list.filter((b) => b.booking_date <= dateTo);
+    }
+
     if (search) {
       const s = search.toLowerCase();
       list = list.filter(
@@ -122,7 +136,7 @@ export default function BookingsPage() {
     }
 
     return list;
-  }, [bookings, tab, search]);
+  }, [bookings, tab, search, statusFilter, dateFrom, dateTo]);
 
   const columns: ColumnDef<BookingRow>[] = useMemo(
     () => [
@@ -201,34 +215,80 @@ export default function BookingsPage() {
 
   return (
     <div className="min-w-0 space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-base font-medium sm:text-lg">Bookings</h2>
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
-            <TabsList className="h-9 shrink-0 bg-muted/50">
-              <TabsTrigger value="all" className="text-xs sm:text-sm">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="active" className="text-xs sm:text-sm">
-                Today
-              </TabsTrigger>
-              <TabsTrigger value="upcoming" className="text-xs sm:text-sm">
-                Upcoming
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs sm:text-sm">
-                Done
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-xs sm:text-sm">
-                Cancelled
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Input
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-24 sm:w-32 text-sm"
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-base font-medium sm:text-lg">Bookings</h2>
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as BookingTab)} className="shrink-0">
+              <TabsList className="h-9 shrink-0 bg-muted/50">
+                <TabsTrigger value="all" className="text-xs sm:text-sm">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="active" className="text-xs sm:text-sm">
+                  Today
+                </TabsTrigger>
+                <TabsTrigger value="upcoming" className="text-xs sm:text-sm">
+                  Upcoming
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="text-xs sm:text-sm">
+                  Done
+                </TabsTrigger>
+                <TabsTrigger value="cancelled" className="text-xs sm:text-sm">
+                  Cancelled
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 w-24 sm:w-32 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background pl-3 pr-8 py-1 text-sm"
+          >
+            <option value="all">All statuses</option>
+            <option value="pending_deposit">Pending deposit</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="expired">Expired</option>
+            <option value="no_show">No show</option>
+          </select>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            placeholder="From"
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
           />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            placeholder="To"
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+          />
+          {(dateFrom || dateTo || statusFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+                setStatusFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
         </div>
       </div>
 
