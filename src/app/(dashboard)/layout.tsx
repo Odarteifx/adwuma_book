@@ -43,15 +43,21 @@ export default async function DashboardLayout({
         </div>
         <SidebarNav />
       </aside>
-      <div className="flex flex-1 flex-col">
-        <DashboardHeader
-          userEmail={user.email || ""}
-          userName={userName}
-          oauthAvatarUrl={oauthAvatar}
-          gravatarUrl={gravatarUrl}
-          businessSlug={business.slug}
+      <div className="relative flex flex-1 flex-col min-h-[100dvh]">
+        <div
+          className="pointer-events-none fixed inset-0 z-0 bg-pattern-dots md:left-64"
+          aria-hidden
         />
-        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        <div className="relative z-10 flex flex-1 flex-col">
+            <DashboardHeader
+            userEmail={user.email || ""}
+            userName={userName}
+            oauthAvatarUrl={oauthAvatar}
+            gravatarUrl={gravatarUrl}
+            businessSlug={business.slug}
+          />
+          <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        </div>
       </div>
     </div>
   );
