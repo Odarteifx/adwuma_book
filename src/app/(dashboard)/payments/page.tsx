@@ -21,6 +21,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { CreditCard, TrendingUp, Calendar, Copy, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -256,36 +263,37 @@ export default function PaymentsPage() {
             placeholder="Customer or reference..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-8 text-sm"
+            className="h-9 min-h-[36px] pl-8 text-sm leading-none"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as PaymentStatusFilter)}
-          className="h-9 rounded-md border border-input bg-background pl-3 pr-8 py-1 text-sm"
-        >
-          <option value="all">All statuses</option>
-          <option value="success">Success</option>
-          <option value="pending">Pending</option>
-          <option value="failed">Failed</option>
-        </select>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatusFilter)}>
+          <SelectTrigger className="h-9 min-h-[36px] w-[140px] gap-1 rounded-md border border-input bg-background pl-3 pr-2 text-sm leading-none">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="success">Success</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+          </SelectContent>
+        </Select>
         <input
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+          className="h-9 min-h-[36px] w-[140px] rounded-md border border-input bg-background px-3 text-sm leading-none [&::-webkit-calendar-picker-indicator]:opacity-60"
         />
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+          className="h-9 min-h-[36px] w-[140px] rounded-md border border-input bg-background px-3 text-sm leading-none [&::-webkit-calendar-picker-indicator]:opacity-60"
         />
         {(dateFrom || dateTo || statusFilter !== "all" || search.trim()) && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 text-xs"
+            className="h-9 min-h-[36px] text-xs"
             onClick={() => {
               setDateFrom("");
               setDateTo("");
