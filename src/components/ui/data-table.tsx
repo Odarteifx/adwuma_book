@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
@@ -24,6 +25,7 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number;
   mobileCard?: (row: TData) => React.ReactNode;
   rowClassName?: (row: TData) => string | undefined;
+  onRowClick?: (row: TData) => void;
   className?: string;
 }
 
@@ -33,6 +35,7 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   mobileCard,
   rowClassName,
+  onRowClick,
   className,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -70,7 +73,14 @@ export function DataTable<TData, TValue>({
             <TableBody>
               {rows.length ? (
                 rows.map((row) => (
-                  <TableRow key={row.id} className={rowClassName?.(row.original)}>
+                  <TableRow
+                    key={row.id}
+                    className={cn(
+                      rowClassName?.(row.original),
+                      onRowClick && "cursor-pointer hover:bg-muted/50"
+                    )}
+                    onClick={() => onRowClick?.(row.original)}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(
@@ -103,7 +113,14 @@ export function DataTable<TData, TValue>({
             rows.map((row, i) => (
               <div
                 key={row.id}
-                className={`min-h-[60px] px-4 py-3 ${i !== 0 ? "border-t" : ""} ${rowClassName?.(row.original) ?? ""}`}
+                className={cn(
+                  "min-h-[60px] px-4 py-3",
+                  i !== 0 && "border-t",
+                  rowClassName?.(row.original),
+                  onRowClick && "cursor-pointer hover:bg-muted/50"
+                )}
+                onClick={() => onRowClick?.(row.original)}
+                role={onRowClick ? "button" : undefined}
               >
                 {mobileCard(row.original)}
               </div>
