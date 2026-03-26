@@ -14,16 +14,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { BookingsSkeleton } from "@/components/dashboard/skeletons";
 import { formatDate, formatTime } from "@/lib/utils";
-import { Eye, CheckCircle, XCircle } from "lucide-react";
+import { Eye, CheckCircle, XCircle, CalendarClock, Loader2 } from "lucide-react";
 
 type BookingTab = "all" | "active" | "upcoming" | "completed" | "cancelled";
 
-type BookingRow = Booking & { services?: { name: string } };
+type BookingRow = Booking & { services?: { name: string; duration_minutes?: number } };
+
+type BookingChangeRecord = {
+  id: string;
+  old_booking_date: string;
+  old_start_time: string;
+  new_booking_date: string;
+  new_start_time: string;
+  new_end_time: string;
+  created_at: string;
+};
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -41,6 +58,13 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleSlot, setRescheduleSlot] = useState<string | null>(null);
+  const [slots, setSlots] = useState<Array<{ time: string; available: boolean }>>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
+  const [changeHistory, setChangeHistory] = useState<BookingChangeRecord[]>([]);
 
   useEffect(() => {
     if (!business) return;
@@ -50,7 +74,7 @@ export default function BookingsPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("bookings")
-        .select("*, services(name, price)")
+        .select("*, services(name, price, duration_minutes)")
         .eq("business_id", businessId)
         .order("booking_date", { ascending: false })
         .order("start_time", { ascending: false });
@@ -62,6 +86,20 @@ export default function BookingsPage() {
     load();
     return () => { cancelled = true; };
   }, [business, reloadKey]);
+
+  useEffect(() => {
+    if (!detailOpen || !selectedBooking?.id) {
+      setChangeHistory([]);
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from("booking_changes")
+      .select("id, old_booking_date, old_start_time, new_booking_date, new_start_time, new_end_time, created_at")
+      .eq("booking_id", selectedBooking.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setChangeHistory((data as BookingChangeRecord[]) || []));
+  }, [detailOpen, selectedBooking?.id]);
 
   function reload() {
     setReloadKey((k) => k + 1);
@@ -80,6 +118,54 @@ export default function BookingsPage() {
       toast.success(`Booking ${status}`);
       reload();
       setDetailOpen(false);
+    }
+  }
+
+  function openReschedule() {
+    if (selectedBooking) {
+      setRescheduleDate(selectedBooking.booking_date);
+      setRescheduleSlot(null);
+      setSlots([]);
+      setRescheduleOpen(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!rescheduleOpen || !selectedBooking || !rescheduleDate || !business) return;
+    const duration = selectedBooking.services?.duration_minutes ?? 30;
+    setSlotsLoading(true);
+    fetch(
+      `/api/slots?businessId=${business.id}&date=${rescheduleDate}&duration=${duration}`
+    )
+      .then((r) => r.json())
+      .then((data) => setSlots(Array.isArray(data) ? data : []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotsLoading(false));
+  }, [rescheduleOpen, selectedBooking, rescheduleDate, business]);
+
+  async function handleReschedule() {
+    if (!selectedBooking || !rescheduleDate || !rescheduleSlot) return;
+    setRescheduleSaving(true);
+    try {
+      const res = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_date: rescheduleDate,
+          start_time: rescheduleSlot,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to reschedule");
+        return;
+      }
+      toast.success("Appointment rescheduled");
+      setRescheduleOpen(false);
+      setDetailOpen(false);
+      reload();
+    } finally {
+      setRescheduleSaving(false);
     }
   }
 
@@ -248,38 +334,37 @@ export default function BookingsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background pl-3 pr-8 py-1 text-sm"
-          >
-            <option value="all">All statuses</option>
-            <option value="pending_deposit">Pending deposit</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="expired">Expired</option>
-            <option value="no_show">No show</option>
-          </select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 min-h-[36px] w-[180px] gap-1 rounded-md border border-input bg-background pl-3 pr-2 text-sm leading-none">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="pending_deposit">Pending deposit</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="no_show">No show</SelectItem>
+            </SelectContent>
+          </Select>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            placeholder="From"
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+            className="h-9 min-h-[36px] w-[140px] rounded-md border border-input bg-background px-3 text-sm leading-none [&::-webkit-calendar-picker-indicator]:opacity-60"
           />
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            placeholder="To"
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+            className="h-9 min-h-[36px] w-[140px] rounded-md border border-input bg-background px-3 text-sm leading-none [&::-webkit-calendar-picker-indicator]:opacity-60"
           />
           {(dateFrom || dateTo || statusFilter !== "all") && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 text-xs"
+              className="h-9 min-h-[36px] text-xs"
               onClick={() => {
                 setDateFrom("");
                 setDateTo("");
@@ -330,14 +415,20 @@ export default function BookingsPage() {
         />
       )}
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) setRescheduleOpen(false);
+        }}
+      >
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base">Booking</DialogTitle>
           </DialogHeader>
           {selectedBooking && (
-            <div className="space-y-4">
-              <div className="space-y-3 text-sm">
+            <div className="space-y-0">
+              <div className="space-y-3 text-sm pb-4">
                 <div>
                   <p className="text-muted-foreground text-xs">Customer</p>
                   <p className="font-medium">{selectedBooking.customer_name}</p>
@@ -373,27 +464,164 @@ export default function BookingsPage() {
                 )}
               </div>
 
-              {selectedBooking.status === "confirmed" && (
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => updateStatus(selectedBooking.id, "completed")}
-                  >
-                    <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Complete
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => updateStatus(selectedBooking.id, "cancelled")}
-                  >
-                    <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Cancel
-                  </Button>
+              {changeHistory.length > 0 && (
+                <div className="border-t border-border/60 pt-4">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3">
+                    Change history
+                  </p>
+                  <ul className="space-y-2.5">
+                    {changeHistory.map((ch) => (
+                      <li
+                        key={ch.id}
+                        className="flex items-baseline gap-3 text-xs"
+                      >
+                        <span className="shrink-0 w-20 text-muted-foreground">
+                          {formatDate(ch.created_at.split("T")[0])}
+                        </span>
+                        <span className="min-w-0 text-foreground/90">
+                          {formatDate(ch.old_booking_date)} {formatTime(ch.old_start_time)}
+                          <span className="mx-1.5 text-muted-foreground">→</span>
+                          {formatDate(ch.new_booking_date)} {formatTime(ch.new_start_time)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+              )}
+
+              {(selectedBooking.status === "confirmed" ||
+                selectedBooking.status === "pending_deposit") && (
+                <>
+                  {!rescheduleOpen ? (
+                    <div className="border-t border-border/60 pt-4 space-y-2">
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 w-full"
+                          onClick={openReschedule}
+                        >
+                          <CalendarClock className="mr-2 h-3.5 w-3.5" />
+                          Change date
+                        </Button>
+                        {selectedBooking.status === "confirmed" && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9"
+                              onClick={() =>
+                                updateStatus(selectedBooking.id, "completed")
+                              }
+                            >
+                              <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                              Complete
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() =>
+                                updateStatus(selectedBooking.id, "cancelled")
+                              }
+                            >
+                              <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-t border-border/60 pt-4 space-y-4">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        New date & time
+                      </p>
+                      <div className="space-y-2">
+                        <label className="block text-xs text-muted-foreground">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          value={rescheduleDate}
+                          min={todayStr()}
+                          onChange={(e) => {
+                            setRescheduleDate(e.target.value);
+                            setRescheduleSlot(null);
+                          }}
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        />
+                      </div>
+                      {rescheduleDate && (
+                        <div className="space-y-2">
+                          <label className="block text-xs text-muted-foreground">
+                            Time
+                          </label>
+                          {slotsLoading ? (
+                            <div className="flex h-9 items-center gap-2 text-xs text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading slots…
+                            </div>
+                          ) : slots.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              No slots this date
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                              {slots
+                                .filter((s) => s.available)
+                                .map((slot) => (
+                                  <Button
+                                    key={slot.time}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                      rescheduleSlot === slot.time
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className="h-9 text-xs"
+                                    onClick={() =>
+                                      setRescheduleSlot(
+                                        rescheduleSlot === slot.time
+                                          ? null
+                                          : slot.time
+                                      )
+                                    }
+                                  >
+                                    {formatTime(slot.time)}
+                                  </Button>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="flex-1 h-9"
+                          onClick={() => setRescheduleOpen(false)}
+                          disabled={rescheduleSaving}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-9"
+                          onClick={handleReschedule}
+                          disabled={!rescheduleSlot || rescheduleSaving}
+                        >
+                          {rescheduleSaving ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            "Save"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
