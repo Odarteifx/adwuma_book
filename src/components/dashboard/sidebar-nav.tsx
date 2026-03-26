@@ -11,6 +11,7 @@ import {
   CreditCard,
   BarChart3,
   Bot,
+  MessageSquare,
   Settings,
   Star,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/reviews", label: "Reviews", icon: Star },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/ai-manager", label: "AI Assistant", icon: Bot },
+  { href: "/conversations", label: "Conversations", icon: MessageSquare },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
